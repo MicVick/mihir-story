@@ -300,7 +300,7 @@ export const chapters: Chapter[] = [
     altitude: 750,
     sky: 'sunset',
     kite: 3,
-    chipsTitle: 'IIM Ahmedabad, 2025 to today',
+    chipsTitle: 'Outside the classroom',
     chips: [
       { id: 'amazon', body: 'Amazon: Program Manager Intern. Built an ML tool that explains about 85% of what moves GMS in vendor discussions.' },
       { id: 'picus', body: 'Picus Capital: Student Venture Partner, scouting early-stage startups.' },

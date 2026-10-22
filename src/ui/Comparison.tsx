@@ -30,8 +30,8 @@ export function Comparison({ comparison, tone }: Props) {
           {comparison.rows.map((row) => (
             <tr key={row.id} className={row.match ? 'is-match' : undefined}>
               <th scope="row">{row.name}</th>
-              <td>{row.yours}</td>
-              <td>{row.mine}</td>
+              <td data-label={ui.tableYours}>{row.yours}</td>
+              <td data-label={ui.tableMine}>{row.mine}</td>
             </tr>
           ))}
         </tbody>

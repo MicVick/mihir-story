@@ -392,6 +392,7 @@
   font-family: var(--font-text);
   font-size: var(--text-size);
   font-style: italic;
+  line-height: 1.45;
 }
 
 .comparison__table {
@@ -433,6 +434,44 @@
 
 .card--light .comparison__table tr.is-match td:nth-child(2) {
   font-weight: 600;
+}
+
+/* Phones: each decision becomes a short block, with the two choices labelled underneath. */
+@media (max-width: 560px) {
+  .comparison__table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .comparison__table tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .comparison__table th,
+  .comparison__table td {
+    padding: 0;
+    border: 0;
+  }
+
+  .comparison__table tbody th {
+    grid-column: 1 / -1;
+    margin-bottom: 4px;
+  }
+
+  .comparison__table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: calc(12.5px * var(--scale));
+    font-weight: 500;
+    color: var(--soft);
+  }
 }
 
 .comparison__locked {

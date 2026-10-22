@@ -254,6 +254,7 @@ html.is-flying body {
 
 .menu__heading {
   font-size: 22px;
+  margin-bottom: 4px;
 }
 
 .menu__close {
@@ -277,7 +278,7 @@ html.is-flying body {
   min-height: 44px;
   padding: 8px 10px 8px 6px;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: transparent;
   text-align: left;
   font-size: 15px;
@@ -306,6 +307,13 @@ html.is-flying body {
 }
 
 .menu__title {
+  font-family: var(--font-head);
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.menu__chapter.is-current .menu__title {
+  font-style: italic;
   font-weight: 600;
 }
 
@@ -878,8 +886,10 @@ html.is-flying body {
     transform: none;
   }
 
-  /* Both options must be fully visible, so an open decision may use more of the screen. */
-  .beat.beat--decision {
+  /* Both options must be fully visible, so an open decision may use more of the screen.
+     The highlights list gets the same room so its last item is not hidden. */
+  .beat.beat--decision,
+  .beat.beat--chips {
     max-height: 66vh;
     max-height: 66dvh;
   }
