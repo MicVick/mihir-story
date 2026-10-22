@@ -14,6 +14,7 @@ import { isSmallScreen } from '../lib/device';
 import { useFlight } from '../state/store';
 import { SNAP } from './cutTimeline';
 import { frame } from './frame';
+import { LANDING_TOP } from './Rooftops';
 import { createSailMaterial, sailGeometry, sparGeometry, createSparMaterial } from './kiteModel';
 import { smoothstep } from './skyMath';
 import { seeded, wrap } from './wrap';
@@ -31,6 +32,16 @@ interface Rival {
   phase: number;
   speed: number;
   side: 1 | -1;
+}
+
+/** Kites over the rooftops at dawn, fixed in the world so they drop away as the kite climbs. */
+interface Crowd {
+  x: number;
+  y: number;
+  z: number;
+  phase: number;
+  side: 1 | -1;
+  scale: number;
 }
 
 function stringLine(material: LineBasicMaterial) {
@@ -51,6 +62,9 @@ function setLine(line: Line, x: number, y: number, z: number, side: number) {
 
 const muted = (hex: string) => new Color(hex).lerp(new Color('#ffffff'), 0.55);
 
+/** The dawn crowd is brighter than the muted rivals: it is a festival. */
+const CROWD_COLOURS = ['#C8506F', '#E39A3B', '#5B7FA8', '#5E9A7A', '#86689E', '#D9B23F', '#4F8C99', '#C46A4A'];
+
 /**
  * 4 to 8 rival kites drifting and bobbing at different depths, and the one
  * that comes in from the left and crosses the string at Cut 1.
@@ -58,6 +72,7 @@ const muted = (hex: string) => new Color(hex).lerp(new Color('#ffffff'), 0.55);
 export function RivalKites() {
   const groups = useRef<(Group | null)[]>([]);
   const cutter = useRef<Group>(null);
+  const crowdGroups = useRef<(Group | null)[]>([]);
 
   const parts = useMemo(() => {
     const rand = seeded(91);
@@ -76,6 +91,31 @@ export function RivalKites() {
       const colour = rivalKites[i % rivalKites.length];
       m.uniforms.uMain.value.set(colour);
       m.uniforms.uSecond.value.copy(muted(colour));
+      m.uniforms.uPattern.value = i % 3;
+      return m;
+    });
+    const small = isSmallScreen();
+    const crowd: Crowd[] = Array.from({ length: small ? 16 : 30 }, (_, i) => {
+      const z = -22 - rand() * 110;
+      let x = (rand() - 0.5) * (40 + -z * 1.3);
+      // On wide screens, keep a clear column behind the title and the launch button.
+      const clear = 0.2 * (9 - z);
+      if (!small && Math.abs(x) < clear) x = Math.sign(x || 1) * (clear + Math.abs(x));
+      return {
+        x,
+        y: LANDING_TOP + 4 + rand() * (8 + -z * 0.28),
+        z,
+        phase: rand() * Math.PI * 2,
+        side: i % 2 === 0 ? 1 : -1,
+        scale: 0.8 + rand() * 0.5,
+      };
+    });
+    const crowdMaterials = crowd.map((_, i) => {
+      const m = createSailMaterial(true);
+      const colour = CROWD_COLOURS[i % CROWD_COLOURS.length];
+      m.uniforms.uMain.value.set(colour);
+      m.uniforms.uSecond.value.copy(muted(colour));
+      m.uniforms.uPattern.value = i % 3;
       return m;
     });
     const cutterMaterial = createSailMaterial(true);
@@ -83,6 +123,9 @@ export function RivalKites() {
     cutterMaterial.uniforms.uSecond.value.copy(muted(rivalKites[2]));
     return {
       rivals,
+      crowd,
+      crowdMaterials,
+      crowdStrings: crowd.map(() => stringLine(stringMaterial)),
       materials,
       cutterMaterial,
       stringMaterial,
@@ -97,7 +140,9 @@ export function RivalKites() {
   useEffect(
     () => () => {
       parts.materials.forEach((m) => m.dispose());
+      parts.crowdMaterials.forEach((m) => m.dispose());
       parts.strings.forEach((l) => l.geometry.dispose());
+      parts.crowdStrings.forEach((l) => l.geometry.dispose());
       parts.cutterString.geometry.dispose();
       [parts.cutterMaterial, parts.stringMaterial, parts.sail, parts.spars, parts.spar].forEach((p) => p.dispose());
     },
@@ -125,11 +170,30 @@ export function RivalKites() {
       const y = wrap(r.y, camera.position.y, halfH * 1.3) + 0.4 * Math.sin(t * 0.8 + r.phase);
       g.position.set(x, y, r.z);
       g.rotation.set(-0.2, 0.2 * Math.sin(t * 0.5 + r.phase), 0.15 * Math.sin(t * 0.9 + r.phase) + 0.25 * r.side);
-      g.visible = alpha > 0.01;
+      // Never down among the houses.
+      g.visible = alpha > 0.01 && y > LANDING_TOP + 3;
       parts.materials[i].uniforms.uAlpha.value = 0.95 * alpha;
       parts.materials[i].uniforms.uLight.value = light;
       setLine(parts.strings[i], x, y - 0.1, r.z, r.side);
       parts.strings[i].visible = g.visible;
+    });
+
+    // The dawn crowd over the rooftops. Fixed in the world, so they fall away below as the kite climbs.
+    const crowdAlpha = 1 - smoothstep(18, 40, camera.position.y);
+    parts.crowd.forEach((k, i) => {
+      const g = crowdGroups.current[i];
+      if (!g) return;
+      const show = crowdAlpha > 0.01;
+      g.visible = show;
+      parts.crowdStrings[i].visible = show;
+      if (!show) return;
+      const x = k.x + 0.5 * Math.sin(t * 0.35 + k.phase);
+      const y = k.y + 0.3 * Math.sin(t * 0.7 + k.phase * 2);
+      g.position.set(x, y, k.z);
+      g.rotation.set(-0.15, 0.25 * Math.sin(t * 0.5 + k.phase), 0.18 * Math.sin(t * 0.8 + k.phase) + 0.3 * k.side);
+      parts.crowdMaterials[i].uniforms.uAlpha.value = 0.95 * crowdAlpha * alpha;
+      parts.crowdMaterials[i].uniforms.uLight.value = light;
+      setLine(parts.crowdStrings[i], x, y - 0.1, k.z, k.side);
     });
 
     // The cutter: flies in from the left and lays its string across Mihir's,
@@ -167,6 +231,15 @@ export function RivalKites() {
       ))}
       {parts.strings.map((line, i) => (
         <primitive key={`s${i}`} object={line} />
+      ))}
+      {parts.crowd.map((k, i) => (
+        <group key={`c${i}`} ref={(el) => (crowdGroups.current[i] = el)} scale={k.scale}>
+          <mesh geometry={parts.sail} material={parts.crowdMaterials[i]} />
+          <lineSegments geometry={parts.spars} material={parts.spar} />
+        </group>
+      ))}
+      {parts.crowdStrings.map((line, i) => (
+        <primitive key={`cs${i}`} object={line} />
       ))}
       <group ref={cutter} visible={false}>
         <mesh geometry={parts.sail} material={parts.cutterMaterial} />

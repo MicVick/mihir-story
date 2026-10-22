@@ -80,6 +80,17 @@ export function useFlightInput(enabled: boolean) {
     const onKey = (e: KeyboardEvent) => {
       if (e.altKey || e.ctrlKey || e.metaKey) return;
       const onControl = e.target instanceof Element && e.target.closest(INTERACTIVE);
+      const state = useFlight.getState();
+      if (e.key === 'Escape') {
+        // Esc opens the spool menu, and closes it again.
+        e.preventDefault();
+        state.setMenuOpen(!state.menuOpen);
+        return;
+      }
+      if ((e.key === 'p' || e.key === 'P') && !e.shiftKey) {
+        state.setPresenter(!state.presenter);
+        return;
+      }
       switch (e.key) {
         case 'ArrowUp':
         case 'PageUp':

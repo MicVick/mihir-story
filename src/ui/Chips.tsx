@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { CardTone } from '../content/palette';
 import type { StoryCard } from '../content/story';
 
@@ -5,12 +6,14 @@ interface Props {
   chips: StoryCard[];
   tone: CardTone;
   title?: string;
+  eyebrow?: ReactNode;
 }
 
-/** Story-mode version of the small labelled kites that fly beside Mihir's kite. */
-export function Chips({ chips, tone, title }: Props) {
+/** The highlights of a chapter as a list, each marked with a small kite. */
+export function Chips({ chips, tone, title, eyebrow }: Props) {
   return (
     <article className={`card card--${tone}`}>
+      {eyebrow}
       {title && <h3 className="card__title">{title}</h3>}
       <ul className="chips">
         {chips.map((chip) => (

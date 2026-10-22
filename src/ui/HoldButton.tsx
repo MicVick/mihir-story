@@ -50,6 +50,7 @@ export function HoldButton({ label, onComplete }: Props) {
         <circle className="hold__track" cx="36" cy="36" r={RADIUS} />
         <circle className="hold__fill" cx="36" cy="36" r={RADIUS} />
       </svg>
+      <span className="hold__glyph" aria-hidden="true" />
       <span className="hold__label">{label}</span>
     </button>
   );

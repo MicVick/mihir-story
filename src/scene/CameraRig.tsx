@@ -12,8 +12,13 @@ const MOBILE_MAX_WIDTH = 768;
 /** How far the camera tilts up to the night sky in the ending, in radians. */
 const ENDING_TILT = 0.12;
 /** While a cut kite rests on the roof, the camera rises and looks down at the terrace. */
-const LANDED_RISE = 3.5;
-const LANDED_TILT = -0.22;
+const LANDED_RISE = 3;
+const LANDED_TILT = -0.15;
+/** Before launch the camera stands on the terrace, close to the kite, looking up at a sky full of kites. */
+const INTRO = {
+  desktop: { distance: 9, eye: 1.5, tilt: 0.13 },
+  mobile: { distance: 9, eye: 1.5, tilt: 0.13 },
+};
 
 /**
  * Follows the kite with a soft lag. Desktop keeps the kite left of centre
@@ -29,15 +34,20 @@ export function CameraRig() {
   useFrame((state, delta) => {
     const camera = state.camera as PerspectiveCamera;
     const { phase, altitude } = useFlight.getState();
+    const mobile = state.size.width <= MOBILE_MAX_WIDTH;
+    const intro = mobile ? INTRO.mobile : INTRO.desktop;
+    const P = frame.perched;
     // Pull back a little at decisions to show the gust and the bent string.
-    const distance = DISTANCE + 2.5 * frame.gust;
+    const distance = DISTANCE + 2.5 * frame.gust + (intro.distance - DISTANCE) * P;
     const halfH = distance * Math.tan((camera.fov * Math.PI) / 360);
     const halfW = halfH * (state.size.width / state.size.height);
-    const mobile = state.size.width <= MOBILE_MAX_WIDTH;
 
     const anchor = frame.kiteAnchor;
-    const tx = mobile ? anchor.x : anchor.x + halfW * 0.36;
-    const ty = (mobile ? anchor.y - halfH * 0.38 : anchor.y - halfH * 0.05) + LANDED_RISE * frame.landed;
+    const tx = anchor.x + (mobile ? 0 : halfW * 0.36) * (1 - P);
+    // On phones the kite rides higher at night, leaving room for the lanterns and their goals.
+    const night = smoothstep(ENDING_ALTITUDE, ENDING_ALTITUDE + 15, altitude);
+    const flyY = mobile ? anchor.y - halfH * (0.38 + 0.24 * night) : anchor.y - halfH * 0.05;
+    const ty = flyY + (anchor.y + intro.eye - flyY) * P + LANDED_RISE * frame.landed;
     const b = base.current;
 
     // First frame, or a jump far enough that easing would lose the kite.
@@ -58,7 +68,9 @@ export function CameraRig() {
       camera.position.y += (Math.random() - 0.5) * 0.16 * frame.shake;
     }
     camera.rotation.x =
-      LANDED_TILT * frame.landed + (mobile ? 0 : ENDING_TILT * smoothstep(ENDING_ALTITUDE, MAX_ALTITUDE, altitude));
+      intro.tilt * P +
+      LANDED_TILT * frame.landed +
+      (mobile ? 0 : ENDING_TILT * smoothstep(ENDING_ALTITUDE, MAX_ALTITUDE, altitude));
   }, -1);
 
   return null;

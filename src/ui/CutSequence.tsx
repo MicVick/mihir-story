@@ -5,7 +5,9 @@ import { chapters, ui, type Chapter } from '../content/story';
 import { SNAP } from '../scene/cutTimeline';
 import { useFlight, type CutState } from '../state/store';
 import { DecisionPanel } from './DecisionPanel';
+import { Eyebrow } from './Eyebrow';
 import { HoldButton } from './HoldButton';
+import { ArrowIcon } from './icons';
 import { RevealCard } from './RevealCard';
 import { StoryCard } from './StoryCard';
 
@@ -55,18 +57,20 @@ function CutStep({ cut, chapter, tone }: { cut: CutState; chapter: Chapter; tone
   const chosen = useFlight((s) => (chapter.decision ? s.choices[chapter.decision.id] : undefined));
   const cards = chapter.cards;
   const card = cards[cut.step - 1];
+  const eyebrow = <Eyebrow chapter={chapter} />;
 
   if (card) {
     const last = cut.step === cards.length;
     return (
-      <StoryCard card={card} tone={tone}>
+      <StoryCard card={card} tone={tone} eyebrow={eyebrow}>
         {cut.id === 'snap' && last ? (
           <div className="cut-step__action">
             <HoldButton label={ui.retie} onComplete={relaunch} />
           </div>
         ) : (
-          <button type="button" className="continue" onClick={advanceCut} autoFocus>
+          <button type="button" className="pill pill--primary continue" onClick={advanceCut} autoFocus>
             {ui.continue}
+            <ArrowIcon />
           </button>
         )}
       </StoryCard>
@@ -76,10 +80,12 @@ function CutStep({ cut, chapter, tone }: { cut: CutState; chapter: Chapter; tone
   const decision = chapter.decision;
   if (!decision) return null;
   if (!chosen) {
-    return <DecisionPanel decision={decision} tone={tone} onChoose={(choice) => choose(decision.id, choice)} />;
+    return (
+      <DecisionPanel decision={decision} tone={tone} eyebrow={eyebrow} onChoose={(choice) => choose(decision.id, choice)} />
+    );
   }
   // Whatever the visitor picked, the reveal shows the new kite, and Continue launches it.
-  return <RevealCard decision={decision} tone={tone} chosen={chosen} onContinue={relaunch} />;
+  return <RevealCard decision={decision} tone={tone} chosen={chosen} eyebrow={eyebrow} onContinue={relaunch} />;
 }
 
 /** "Kai po che!" on screen from the moment the rival's string crosses Mihir's. */

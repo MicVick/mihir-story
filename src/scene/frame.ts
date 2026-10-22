@@ -26,8 +26,10 @@ export const frame = {
   cutT: -1,
   /** Seconds since the relaunch began, or -1. */
   relaunchT: -1,
-  /** 0 to 1. The kite is resting on the roof. */
+  /** 0 to 1. A cut kite is resting on the terrace. */
   landed: 0,
+  /** 0 to 1. The kite is propped on the parapet before launch, and lifts off as it climbs. */
+  perched: 1,
   /** 0 to 1. Short camera shake when the strings cross. */
   shake: 0,
   /** 0 to 1. Rain during Cut 1. */

@@ -1,7 +1,8 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { Euler, Vector3, type Group } from 'three';
-import { cutStop } from '../content/beats';
+import { cutStop, kiteFor } from '../content/beats';
+import { chapters } from '../content/story';
 import { kites } from '../content/palette';
 import { prefersReducedMotion } from '../lib/device';
 import { useFlight } from '../state/store';
@@ -16,13 +17,16 @@ import {
   sparGeometry,
   tailGeometry,
 } from './kiteModel';
+import { COPING_TOP, LANDING_TOP, PARAPET_Z } from './Rooftops';
 import { smoothstep } from './skyMath';
 
-/** A kite lying back on a terrace roof. */
-const REST_ROTATION = new Euler(-1.2, 0, 0.35);
-/** The fallen kite rests a little behind the flying plane, on the landing terrace. */
-export const REST_Z = -3;
-/** At Decision 4 the old kite rests on the left (option A) and the new one on the right (option B). */
+/** A fallen kite lying on the terrace floor, a little in front of the parapet. */
+const FALLEN_ROTATION = new Euler(-1.42, 0, 0.42);
+const FALLEN = new Vector3(0, LANDING_TOP + 0.08, 1.6);
+/** A kite waiting for launch, standing on the parapet's coping, leaning back a little. */
+const PERCHED_ROTATION = new Euler(-0.22, 0.1, 0.04);
+const PERCHED = new Vector3(0, COPING_TOP + 0.78, PARAPET_Z);
+/** In a cut the fallen kite lies on the left and the next kite waits on the right. */
 const SIDE_X = 1.4;
 
 type KiteParts = ReturnType<typeof createKiteParts>;
@@ -44,6 +48,7 @@ function useKiteParts(kiteId: 1 | 2 | 3, patch: boolean): KiteParts {
     const k = kites[kiteId];
     parts.sail.uniforms.uMain.value.set(k.main);
     parts.sail.uniforms.uSecond.value.set(k.second);
+    parts.sail.uniforms.uPattern.value = k.pattern;
     parts.sail.uniforms.uPatch.value = patch ? 1 : 0;
     // The tail is a single colour: the second colour on both uniforms.
     parts.tail.uniforms.uMain.value.set(k.second);
@@ -128,19 +133,27 @@ export function Kite() {
       }
     }
 
-    // Resting on the roof, blended in as the kite lands and out as the new kite lifts.
-    const slack = s.cut?.id === 'slack';
-    const restX = slack ? (s.phase === 'relaunch' ? SIDE_X : -SIDE_X) : 0;
-    rest.set(restX, frame.kiteAnchor.y, REST_Z);
-    const L = frame.landed;
-    const spin = L > 0 ? nearestAngle(rot.z, REST_ROTATION.z) : rot.z;
-    g.position.lerpVectors(pos, rest, L);
+    // On the terrace: propped against the parapet before launch and while the next kite
+    // waits, or lying where it fell. Blended in as the kite lands and out as it lifts.
+    let weight = frame.perched;
+    let restRot = PERCHED_ROTATION;
+    rest.copy(PERCHED);
+    if (s.phase === 'cut' && s.cut) {
+      weight = frame.landed;
+      restRot = FALLEN_ROTATION;
+      rest.copy(FALLEN).setX(-SIDE_X);
+    } else if (s.phase === 'relaunch') {
+      weight = frame.landed;
+      rest.setX(SIDE_X);
+    }
+    const spin = weight > 0 ? nearestAngle(rot.z, restRot.z) : rot.z;
+    g.position.lerpVectors(pos, rest, weight);
     g.rotation.set(
-      rot.x + (REST_ROTATION.x - rot.x) * L,
-      rot.y + (REST_ROTATION.y - rot.y) * L,
-      spin + (REST_ROTATION.z - spin) * L,
+      rot.x + (restRot.x - rot.x) * weight,
+      rot.y + (restRot.y - rot.y) * weight,
+      spin + (restRot.z - spin) * weight,
     );
-    if (tail.current) tail.current.rotation.z = amp * 0.35 * Math.sin(t * 3.1) * (1 - L);
+    if (tail.current) tail.current.rotation.z = amp * 0.35 * Math.sin(t * 3.1) * (1 - weight);
 
     setLight(parts);
     g.updateMatrixWorld();
@@ -151,23 +164,35 @@ export function Kite() {
 }
 
 /**
- * The second kite on the rooftop at Decision 4. While the visitor decides,
- * it is the new teal Kite 3 on the right. Once Kite 3 launches, the old
- * patched Kite 2 stays behind on the left.
+ * The other kite on the terrace during a cut. Once the cut's cards are read,
+ * the next kite waits against the parapet on the right: Kite 2 beside the
+ * Re-tie button, the new teal Kite 3 at Decision 4. When it launches, the
+ * old kite stays behind, lying where it fell (Kite 2 with its patch).
  */
 export function RestingKite() {
-  const visible = useFlight(
-    (s) => s.cut?.id === 'slack' && ((s.phase === 'cut' && s.cut.step >= 2) || s.phase === 'relaunch'),
-  );
-  const relaunching = useFlight((s) => s.phase === 'relaunch');
-  const parts = useKiteParts(relaunching ? 2 : 3, relaunching);
-  const y = cutStop('slack').fallTo * WORLD_PER_METRE;
+  const cut = useFlight((s) => s.cut);
+  const phase = useFlight((s) => s.phase);
+  const cutsDone = useFlight((s) => s.cutsDone);
+
+  // Snap: with the last card and its Re-tie button. Slack: with Decision 4, after the stall card.
+  const chapter = cut ? chapters[cutStop(cut.id).chapter] : undefined;
+  const ready = chapter ? chapter.cards.length + (chapter.decision ? 1 : 0) : 0;
+  const waiting = phase === 'cut' && cut !== null && cut.step >= ready;
+  const fallen = phase === 'relaunch' && cut !== null;
+  // While waiting, the kite after this cut; once launched, the kite that fell.
+  const done = fallen ? cutsDone.filter((id) => id !== cut.id) : cut ? [...cutsDone, cut.id] : cutsDone;
+  const kiteId = kiteFor(done);
+  const parts = useKiteParts(kiteId, fallen && cut?.id === 'slack');
 
   useFrame(() => setLight(parts));
 
-  if (!visible) return null;
-  return (
-    <group position={[relaunching ? -SIDE_X : SIDE_X, y, REST_Z]} rotation={REST_ROTATION}>
+  if (!waiting && !fallen) return null;
+  return fallen ? (
+    <group position={[-SIDE_X, FALLEN.y, FALLEN.z]} rotation={FALLEN_ROTATION}>
+      <KiteMesh parts={parts} />
+    </group>
+  ) : (
+    <group position={[SIDE_X, PERCHED.y, PERCHED.z]} rotation={PERCHED_ROTATION}>
       <KiteMesh parts={parts} />
     </group>
   );

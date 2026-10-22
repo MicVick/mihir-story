@@ -15,7 +15,6 @@ interface BeatBase {
 }
 
 export type Beat =
-  | (BeatBase & { kind: 'hero' })
   | (BeatBase & { kind: 'card'; card: StoryCard })
   | (BeatBase & { kind: 'chips'; chips: StoryCard[]; title?: string })
   | (BeatBase & { kind: 'decision'; decision: Decision })
@@ -27,7 +26,6 @@ type BeatContent = WithoutBand<Beat>;
 function beatsFor(chapter: Chapter): BeatContent[] {
   const c = chapter.index;
   const list: BeatContent[] = [];
-  if (c === 0) list.push({ id: 'hero', chapter: c, kind: 'hero' });
   if (chapter.chips && chapter.chipsTitle) {
     list.push({ id: `chips-${c}`, chapter: c, kind: 'chips', chips: chapter.chips, title: chapter.chipsTitle });
   }
@@ -79,7 +77,7 @@ export type Stop =
       chapter: number;
       /** Where the cut begins: the chapter's trigger altitude. */
       altitude: number;
-      /** Where the kite comes to rest on the rooftops. */
+      /** Where the kite comes to rest: 0 is the home terrace. */
       fallTo: number;
       /** Where the relaunched kite climbs back to: the next chapter. */
       riseTo: number;
@@ -99,7 +97,7 @@ export const stops: Stop[] = [
             id: chapter.cut,
             chapter: chapter.index,
             altitude: chapter.altitude,
-            fallTo: chapter.fallTo ?? 60,
+            fallTo: chapter.fallTo ?? 0,
             riseTo: chapters[i + 1]?.altitude ?? MAX_ALTITUDE,
           },
         ]

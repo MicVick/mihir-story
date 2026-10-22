@@ -8,35 +8,81 @@ An interactive story told in one kite flight over Vadodara. A personal-story sit
 npm install
 npm run dev         # http://localhost:5173
 npm run build       # type-check and build to dist/
+npm run preview     # serve the built site
 npm run check:copy  # fails if src/ contains an em or en dash
 ```
 
-Add `?story` to the URL to open story mode directly. Story mode also loads on its own when WebGL is missing or the device is very low-end.
+URL options:
+
+- `?story` opens story mode, the readable page. It also loads on its own when WebGL is missing or the device is very low-end.
+- `?present` starts presenter mode.
 
 ## Controls
 
 | Input | Desktop | Mobile |
 | --- | --- | --- |
+| Launch | Hold "Hold to launch" for 1 second (or press it once from the keyboard) | Press and hold |
 | Climb | Mouse wheel, trackpad, Space, Arrow Up | Swipe up |
 | Descend | Arrow Down, scroll up | Swipe down |
 | Choose | Click a choice, or Tab then Enter | Tap a choice |
+| Menu | Esc or the spool, top right | The spool |
+| Presenter mode | P | From the menu |
 
-The climb locks at each of the five decisions until a choice is made. A choice cannot be changed; descending re-shows its reveal.
+The kite waits on the home terrace until it is launched. The climb locks at each of the five decisions until a choice is made. A choice cannot be changed; descending re-shows its reveal.
 
-At 250 m a rival kite cuts the string (Cut 1); at 450 m the string goes slack (Cut 2). Both kites fall to the rooftops, and the new kite climbs back on its own to the next chapter. "Re-tie the string" is held for one second, or pressed once from the keyboard.
+At 250 m a rival kite cuts the string (Cut 1); at 450 m the string goes slack (Cut 2). Both kites fall back to the home terrace, and the new kite climbs back on its own to the next chapter. "Re-tie the string" is held for one second, or pressed once from the keyboard.
+
+**Presenter mode** climbs on its own at a steady pace, waits on each card long enough to read it aloud plus 2 seconds, and makes all text 15% larger. Decisions, the cut cards and the lanterns still wait for a click, so the room can vote.
+
+**The spool menu** lists the chapters (reached ones can be revisited, the rest stay locked), and switches sound, presenter mode and story mode. The ring around the spool shows how much thread is out.
+
+## Photos and sound
+
+Both are optional and can be added at any time. Nothing is requested for a file that does not exist: the build lists both folders, so a missing photo or sound is simply skipped.
+
+**Photos** go in `public/photos/`, as WebP, up to 1600 px wide and 200 KB each. Three cards have a slot ready in `src/content/story.ts`:
+
+| File | Card |
+| --- | --- |
+| `terrace.webp` | Chapter 0, the terrace (childhood or family) |
+| `building.webp` | Chapter 4, Nexus at NIT Surat (or the WictroniX team) |
+| `iima.webp` | Chapter 9, IIM Ahmedabad |
+
+To use a different photo or card, set `photo` and `photoAlt` on the card in `story.ts`. Photos show in a polaroid frame and load one chapter ahead of the kite.
+
+**Sound** is off until the visitor turns it on (speaker icon or the menu), and nothing loads before that. Files go in `public/audio/`, under 1.5 MB in total, royalty-free or self-recorded:
+
+| File | Plays |
+| --- | --- |
+| `wind.mp3` | Looping; louder with altitude and in the gusts at decisions |
+| `crowd.mp3` | Looping distant rooftop crowd, Chapter 0 only |
+| `creak.mp3` | Once, as the string tightens at each decision |
+| `kaipoche.mp3` | Once, the "Kai po che!" shout at Cut 1 |
+| `bells.mp3` | Once per lantern released |
+
+Until the files are added, the wind, creak and bells are synthesised in the browser and a short snap plays when the string is cut. The crowd and the shout play only from their files.
+
+## Deploy (Vercel)
+
+1. In Vercel, choose **Add New > Project** and import the `MicVick/mihir-story` repository.
+2. Vercel detects Vite from `vercel.json`: build command `npm run build`, output `dist`. Keep the defaults and deploy.
+3. Rename the project (for example `mihir-the-kite`) to get a clean `*.vercel.app` URL, or add a custom domain under **Settings > Domains**.
+4. Once the URL is final, set it in `index.html` as `og:url` and as an absolute `og:image` URL (some apps, including WhatsApp, need an absolute image URL), then check a link preview.
+
+`vercel.json` caches hashed assets for a year and photos and sound for a week.
 
 ## Where things live
 
 - `src/content/story.ts`: **all on-screen copy** and chapter data. Edit text here only. Lines marked `[CONFIRM]` are drafts.
-- `src/content/palette.ts`: sky, kite and lantern colours.
-- `src/state/store.ts`: the Zustand store shared by the UI and (later) the 3D scene. Choices are saved to localStorage when it is available.
-- `src/state/compare.ts`: the "You flew n of 5" score and note.
+- `src/content/palette.ts`: sky, kite and lantern colours, and each kite's pattern.
 - `src/content/beats.ts`: which card shows at which altitude. Each chapter's band is split evenly between its cards.
-- `src/input/useFlightInput.ts`: wheel, touch and keys mapped to a target altitude (virtual scroll).
-- `src/scene/`: the Three.js scene (sky shader, clouds, rooftops, kites, string, rain, lanterns, camera rig). `cutTimeline.ts` holds the timings for both cuts.
-- `src/ui/`: React components. `StoryMode.tsx` is the readable page.
-- `public/photos/`: add WebP photos here and set `photo: '/photos/name.webp'` on a card in `story.ts`. Missing files hide cleanly.
-- `public/audio/`: wind, crowd, creak, kaipoche and bells MP3s (Phase 5).
+- `src/state/store.ts`: the Zustand store shared by the UI and the 3D scene. Choices are saved to localStorage when it is available.
+- `src/state/compare.ts`: the "You flew n of 5" score and note.
+- `src/input/useFlightInput.ts`: wheel, touch and keys mapped to a target altitude (virtual scroll), plus Esc and P.
+- `src/scene/`: the Three.js scene. `Rooftops.tsx` is the city and the home terrace, `haze.ts` the aerial perspective that fades everything into the sky, `cutTimeline.ts` the timings for both cuts.
+- `src/audio/sound.ts`: the sound layers.
+- `src/ui/`: React components. `StoryMode.tsx` is the readable page, `SpoolMenu.tsx` the menu, `usePresenter.ts` presenter mode.
+- `src/styles/`: `global.css` (tokens, cards, buttons), `components.css` (shared by both modes), `flight.css`, `story.css`.
 
 ## Build phases
 
@@ -44,5 +90,5 @@ At 250 m a rival kite cuts the string (Cut 1); at 450 m the string goes slack (C
 - [x] Phase 2: sky, kite and flight
 - [x] Phase 3: decisions and ending
 - [x] Phase 4: cuts, kites and lanterns
-- [ ] Phase 5: opening, sound, photos and presenter mode
-- [ ] Phase 6: QA and deploy
+- [x] Phase 5: opening, sound, photos and presenter mode
+- [ ] Phase 6: QA and deploy (built and checked here; real-device testing and the Vercel deploy are listed in the hand-over notes)

@@ -37,8 +37,8 @@ const fragmentShader = /* glsl */ `
     float sunDist = length((vUv - uSun.xy) * aspect);
     float sunVis = uSun.z * (1.0 - 0.97 * uOvercast) * (1.0 - uDesat);
     vec3 sunCol = vec3(1.0, 0.93, 0.78);
-    col += sunCol * exp(-sunDist * 5.0) * 0.35 * sunVis;
-    col = mix(col, sunCol, smoothstep(0.052, 0.046, sunDist) * sunVis);
+    col += sunCol * (exp(-sunDist * 3.2) * 0.16 + exp(-sunDist * 11.0) * 0.3) * sunVis;
+    col = mix(col, vec3(1.0, 0.97, 0.9), smoothstep(0.048, 0.04, sunDist) * sunVis);
 
     // Stars.
     vec2 grid = vUv * aspect * 90.0;

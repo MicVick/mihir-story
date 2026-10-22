@@ -6,6 +6,7 @@ import { Chips } from './Chips';
 import { DecisionPanel } from './DecisionPanel';
 import { EndingActions, EndingComparison } from './Ending';
 import { RevealCard } from './RevealCard';
+import { KiteGlyph } from './icons';
 import { StoryCard } from './StoryCard';
 
 /** The linear, readable version of the flight. Same chapters, cards and decisions. */
@@ -40,10 +41,15 @@ function ChapterSection({ chapter }: { chapter: Chapter }) {
         {chapter.index === 0 && <Hero />}
 
         <header className={`card card--${tone} chapter__header`}>
-          <p className="chapter__period">{chapter.period}</p>
-          <h2 id={headingId} className="chapter__title">
-            {chapter.title}
-          </h2>
+          <span className="chapter__num" aria-hidden="true">
+            {String(chapter.index).padStart(2, '0')}
+          </span>
+          <div className="chapter__heading">
+            <p className="chapter__period">{chapter.period}</p>
+            <h2 id={headingId} className="chapter__title">
+              {chapter.title}
+            </h2>
+          </div>
         </header>
 
         {chapter.cut === 'snap' && (
@@ -72,15 +78,16 @@ function ChapterSection({ chapter }: { chapter: Chapter }) {
 
 function Hero() {
   return (
-    <div className="hero">
-      <p className="hero__eyebrow">
+    <div className="story-hero">
+      <p className="intro__festival">
         <span lang="gu" className="gujarati">
           {intro.gujarati}
-        </span>{' '}
-        <span>{intro.gujaratiLatin}</span>
+        </span>
+        <span className="intro__latin">{intro.gujaratiLatin}</span>
       </p>
-      <h1 className="hero__title">{intro.heroTitle}</h1>
-      <p className="hero__subtitle">{intro.heroSubtitle}</p>
+      <h1 className="intro__title">{intro.heroTitle}</h1>
+      <p className="intro__subtitle">{intro.heroSubtitle}</p>
+      <KiteGlyph className="story-hero__kite" />
     </div>
   );
 }
@@ -109,7 +116,7 @@ function StoryDecision({ chapter }: { chapter: Chapter }) {
 function StoryEnding({ tone }: { tone: 'light' | 'dark' }) {
   return (
     <>
-      <p className={`card card--${tone} ending__intro`}>{ending.intro}</p>
+      <p className={`card card--${tone} ending__intro ending__line`}>{ending.intro}</p>
 
       <ul className="lanterns">
         {ending.lanterns.map((lantern) => (

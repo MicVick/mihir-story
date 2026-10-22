@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { CardTone } from '../content/palette';
 import { ending, ui } from '../content/story';
 import { hasWebGL, isLowEnd } from '../lib/device';
@@ -31,18 +31,18 @@ export function EndingActions({ inStory }: { inStory: boolean }) {
 
   return (
     <div className="actions">
-      <button type="button" className="action" onClick={flyAgain}>
+      <button type="button" className="pill pill--primary" onClick={flyAgain}>
         {ending.buttons.flyAgain}
       </button>
       {!inStory && (
-        <button type="button" className="action" onClick={() => setMode('story')}>
+        <button type="button" className="pill pill--ghost" onClick={() => setMode('story')}>
           {ending.buttons.readStory}
         </button>
       )}
-      <a className="action" href={`mailto:${ending.contact.email}`}>
+      <a className="pill pill--ghost" href={`mailto:${ending.contact.email}`}>
         {ending.buttons.email}
       </a>
-      <a className="action" href={ending.contact.linkedin} target="_blank" rel="noopener noreferrer">
+      <a className="pill pill--ghost" href={ending.contact.linkedin} target="_blank" rel="noopener noreferrer">
         {ending.buttons.linkedin}
       </a>
     </div>
@@ -56,7 +56,7 @@ const PANEL_DELAY_MS = 1500;
  * Flight ending at night. First the visitor releases the three lanterns
  * (see LanternField); then the comparison, closing line and contact buttons.
  */
-export function Ending({ tone }: { tone: CardTone }) {
+export function Ending({ tone, eyebrow }: { tone: CardTone; eyebrow?: ReactNode }) {
   const allReleased = useFlight((s) => s.lanterns.length >= ending.lanterns.length);
   const [panel, setPanel] = useState(allReleased);
 
@@ -72,14 +72,14 @@ export function Ending({ tone }: { tone: CardTone }) {
   if (!panel) {
     return (
       <div className={`card card--${tone} ending__intro`}>
-        <p>{ending.intro}</p>
+        {eyebrow}
+        <p className="ending__line">{ending.intro}</p>
         <p className="ending__instruction">{ending.instruction}</p>
       </div>
     );
   }
   return (
     <div className="ending">
-      <p className={`card card--${tone} ending__intro`}>{ending.intro}</p>
       <EndingComparison tone={tone} />
       <p className="closing">{ending.closing}</p>
       <EndingActions inStory={false} />

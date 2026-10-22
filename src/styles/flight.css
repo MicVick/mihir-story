@@ -1,4 +1,4 @@
-/* Flight mode: full-screen canvas with an HTML card layer on top. */
+/* Flight mode: full-screen canvas with an HTML layer on top. */
 
 html.is-flying,
 html.is-flying body {
@@ -14,24 +14,604 @@ html.is-flying body {
   touch-action: none;
   -webkit-user-select: none;
   user-select: none;
-  background: #fce6d2;
 }
 
 .flight__canvas {
   position: absolute;
   inset: 0;
+  animation: fade-in 1.2s var(--ease-out) both;
 }
 
-.loader {
-  position: fixed;
+/* Paper grain and a soft vignette: the finish of a printed picture book. */
+.flight__finish {
+  position: absolute;
   inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 42%, transparent 58%, rgba(24, 20, 40, 0.16) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.24 0 0 0 0 0.2 0 0 0 0 0.16 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes loader-sway {
+  from {
+    transform: translateY(0) rotate(-7deg);
+  }
+  to {
+    transform: translateY(-8px) rotate(7deg);
+  }
+}
+
+/* Top bar: name and chapter on the left; presenter, sound and the spool on the right. */
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: max(18px, env(safe-area-inset-top)) max(24px, var(--gutter)) 0;
+  pointer-events: none;
+  color: var(--ink);
+  transition: color 600ms;
+  z-index: 20;
+}
+
+.topbar--dark {
+  color: var(--paper);
+}
+
+/* A soft glow keeps the name and chapter readable over a sky full of kites. */
+.topbar__where {
+  text-shadow:
+    0 0 12px rgba(252, 232, 214, 0.9),
+    0 0 2px rgba(252, 232, 214, 0.8);
+}
+
+.topbar--dark .topbar__where {
+  text-shadow:
+    0 0 12px rgba(13, 24, 48, 0.9),
+    0 0 2px rgba(13, 24, 48, 0.8);
+}
+
+.topbar > * {
+  pointer-events: auto;
+}
+
+.topbar__where {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  min-width: 0;
+  transition:
+    opacity 600ms var(--ease-out),
+    transform 600ms var(--ease-out);
+}
+
+.topbar.is-intro .topbar__where {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+
+.topbar__name {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.topbar__chapter {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-left: 14px;
+  border-left: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.8;
+}
+
+.topbar__num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.topbar__tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar__badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--kite);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.icon-button {
+  position: relative;
   display: grid;
   place-items: center;
-  margin: 0;
-  background: linear-gradient(180deg, #f4b8a0, #fce6d2);
-  font-family: var(--font-head);
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 252, 247, 0.62);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 6px 18px -8px rgba(31, 36, 48, 0.35);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 200ms var(--ease-out),
+    background-color 200ms;
+}
+
+.icon-button:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 252, 247, 0.85);
+}
+
+.icon-button svg {
+  width: 22px;
+  height: 22px;
+}
+
+.topbar--dark .icon-button,
+.card--dark .icon-button {
+  background: rgba(13, 24, 48, 0.5);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--paper);
+}
+
+.topbar--dark .icon-button:hover,
+.card--dark .icon-button:hover {
+  background: rgba(13, 24, 48, 0.75);
+}
+
+/* The spool: thread around it shrinks as the kite climbs. */
+.spool .spool-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.spool__ring {
+  position: absolute;
+  inset: -1px;
+  width: calc(100% + 2px) !important;
+  height: calc(100% + 2px) !important;
+  transform: rotate(-90deg);
+}
+
+.spool__track,
+.spool__thread {
+  fill: none;
+  stroke-width: 2.5;
+}
+
+.spool__track {
+  stroke: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.spool__thread {
+  stroke: var(--kite);
+  stroke-linecap: round;
+  stroke-dashoffset: var(--thread);
+  transition:
+    stroke-dashoffset 400ms linear,
+    stroke 600ms;
+}
+
+/* Spool menu */
+.menu-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 29;
+  background: rgba(20, 22, 34, 0.18);
+  animation: fade-in 250ms ease-out both;
+}
+
+.menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(max(18px, env(safe-area-inset-top)) + 56px);
+  right: max(24px, var(--gutter));
+  width: min(360px, calc(100vw - 2 * var(--gutter)));
+  max-height: calc(100dvh - 100px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 18px 14px;
+  animation: menu-in 320ms var(--ease-out) both;
+  transform-origin: top right;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
+.menu__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 8px 6px;
+}
+
+.menu__heading {
   font-size: 22px;
+}
+
+.menu__close {
+  width: 40px;
+  height: 40px;
+  box-shadow: none;
+}
+
+.menu__chapters {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menu__chapter {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px 8px 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+
+.menu__chapter:not(:disabled):hover {
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+
+.menu__chapter:disabled {
+  cursor: default;
+}
+
+.menu__chapter:disabled .menu__title,
+.menu__chapter:disabled .menu__num {
+  opacity: 0.55;
+}
+
+.menu__num {
+  font-family: var(--font-head);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--soft);
+}
+
+.menu__title {
+  font-weight: 600;
+}
+
+.menu__chapter.is-current .menu__title::after {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 11px;
+  margin-left: 8px;
+  background: var(--kite);
+  clip-path: polygon(50% 0, 100% 42%, 50% 100%, 0 42%);
+}
+
+.menu__period {
+  font-size: 14px;
+  color: var(--soft);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.lock-icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: -3px;
+}
+
+.menu__settings {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.toggle:hover {
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.toggle__text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.toggle__label {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.toggle__hint {
+  font-size: 14px;
+  color: var(--soft);
+}
+
+.toggle__state {
+  font-size: 14px;
+  color: var(--soft);
+}
+
+.toggle__track {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 24px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 20%, transparent);
+  transition: background-color 200ms;
+}
+
+.toggle__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 220ms var(--ease-out);
+}
+
+.toggle[aria-checked='true'] .toggle__track {
+  background: var(--kite);
+}
+
+.toggle[aria-checked='true'] .toggle__knob {
+  transform: translateX(16px);
+}
+
+.menu__story {
+  margin: 4px 0 0 6px;
+}
+
+/* The opening: title in the dawn sky above the terrace. */
+.intro {
+  position: fixed;
+  left: 50%;
+  top: 0;
+  z-index: 15;
+  width: min(640px, calc(100% - 2 * var(--gutter)));
+  padding-top: max(13vh, calc(env(safe-area-inset-top) + 72px));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: var(--ink);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 700ms ease-in,
+    transform 900ms ease-in,
+    visibility 0s linear 900ms;
+}
+
+/* A soft glow of dawn light behind the title keeps it clear of the kites in the sky. */
+.intro::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 4%;
+  width: 150%;
+  height: 92%;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgba(252, 232, 214, 0.9), rgba(252, 232, 214, 0.6) 50%, transparent);
+  pointer-events: none;
+}
+
+.intro.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transition: none;
+}
+
+.intro:not(.is-visible) {
+  transform: translate(-50%, -30px);
+}
+
+.intro > * {
+  animation: rise-in 900ms var(--ease-out) both;
+}
+
+.intro--instant > * {
+  animation: none;
+}
+
+.intro > :nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.intro > :nth-child(3) {
+  animation-delay: 240ms;
+}
+
+.intro > :nth-child(4) {
+  animation-delay: 420ms;
+}
+
+.intro > :nth-child(5) {
+  animation-delay: 600ms;
+}
+
+.intro__festival {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.gujarati {
+  font-family: var(--font-gujarati);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.intro__latin {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.intro__title {
+  font-size: var(--hero-size);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin: 14px 0 14px;
+  font-variation-settings: 'opsz' 144;
+}
+
+.intro__subtitle {
+  text-wrap: balance;
+  font-family: var(--font-head);
+  font-size: calc(var(--body-size) + 4px);
+  font-style: italic;
+  font-weight: 400;
+  color: #39303a;
+}
+
+.intro__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 34px;
+}
+
+.intro .text-link {
+  color: var(--ink);
+}
+
+/* While the scene loads, in place of the launch button. */
+.intro__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-height: 110px;
+  justify-content: center;
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.intro__loading-kite {
+  width: 30px;
+  height: 42px;
+  transform-origin: 50% 100%;
+  animation: loader-sway 1.8s var(--ease-in-out) infinite alternate;
+}
+
+.intro__motion {
+  margin-top: 18px;
+  max-width: 400px;
+  padding: 16px 18px;
+  font-size: var(--small-size);
+  text-align: center;
+}
+
+.intro__motion-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.intro__motion .pill {
+  min-height: 44px;
+}
+
+/* "Scroll or swipe up to fly higher." */
+.hint {
+  position: absolute;
+  left: calc((100% - min(var(--card-max), 40vw) - max(48px, 6vw)) / 2);
+  bottom: max(28px, env(safe-area-inset-bottom));
+  transform: translate(-50%, 8px);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px 10px 12px;
+  border-radius: 999px;
+  background: rgba(255, 252, 247, 0.78);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 24px -12px rgba(31, 36, 48, 0.4);
+  font-size: var(--label-size);
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 400ms,
+    transform 400ms var(--ease-out);
+}
+
+.hint.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition-delay: 300ms;
+}
+
+.hint__chevron {
+  width: 18px;
+  height: 18px;
+  animation: nudge-up 1.4s var(--ease-in-out) infinite;
+}
+
+@keyframes nudge-up {
+  50% {
+    transform: translateY(-3px);
+  }
 }
 
 /* Card slot: right column on desktop, bottom sheet on mobile. */
@@ -53,9 +633,9 @@ html.is-flying body {
   visibility: hidden;
   transform: translateY(calc(-50% + 24px));
   transition:
-    opacity 400ms ease-in,
-    transform 400ms ease-in,
-    visibility 0s linear 400ms;
+    opacity 350ms ease-in,
+    transform 350ms ease-in,
+    visibility 0s linear 350ms;
 }
 
 .beat.is-active {
@@ -64,66 +644,212 @@ html.is-flying body {
   pointer-events: auto;
   transform: translateY(-50%);
   transition:
-    opacity 500ms var(--ease-out),
-    transform 500ms var(--ease-out),
+    opacity 500ms var(--ease-out) 80ms,
+    transform 600ms var(--ease-out) 80ms,
     visibility 0s;
 }
 
 /* The ending is taller than a story card: let it use the screen height and scroll if needed. */
 .beat.beat--ending {
-  max-height: calc(100vh - 48px);
-  max-height: calc(100dvh - 48px);
+  max-height: calc(100vh - 120px);
+  max-height: calc(100dvh - 120px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: none;
 }
 
 .ending {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
 }
 
-.ending .ending__intro {
-  padding-top: 14px;
-  padding-bottom: 14px;
-}
-
-.ending .comparison__table {
-  font-size: 14px;
-}
-
-.ending .comparison__table th,
-.ending .comparison__table td {
-  padding-top: 7px;
-  padding-bottom: 7px;
-}
-
-.ending .closing {
-  font-size: calc(var(--body-size) + 3px);
-  margin: 8px 0 4px;
+.ending__instruction {
+  margin-top: 10px;
+  font-size: var(--small-size);
+  font-weight: 600;
+  color: var(--lantern);
 }
 
 /* The ending is a summary panel, wider than a story card so the table rows stay short. */
 @media (min-width: 769px) {
   .beats:has(.beat--ending.is-active) {
-    width: min(560px, 46vw);
+    width: min(540px, 44vw);
+  }
+}
+
+/* Cut sequence: each step rises in as a new card. */
+.cut-step {
+  animation: rise-in 600ms var(--ease-out) both;
+}
+
+.cut-step__action {
+  display: flex;
+  justify-content: center;
+  margin-top: 26px;
+}
+
+/* "Kai po che!" as the rival kite crosses the string. */
+.shout-flight {
+  position: absolute;
+  left: 50%;
+  top: 16%;
+  margin: 0;
+  transform: translateX(-50%);
+  font-family: var(--font-head);
+  font-size: clamp(44px, 7vw, 84px);
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-shadow: 0 2px 30px rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: shout-in 500ms var(--ease-out) both;
+}
+
+@keyframes shout-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.85) rotate(-3deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1) rotate(-3deg);
+  }
+}
+
+/* The three hero lanterns in the ending. */
+.lantern-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --rise: 52vh;
+}
+
+.hero-lantern {
+  position: absolute;
+  /* Anchored at the top so the lights stay level when goals of different lengths appear below them. */
+  top: 68%;
+  width: 170px;
+  margin-left: -85px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border: 0;
+  background: none;
+  color: var(--paper);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 3.5s var(--ease-out);
+  animation: lantern-bob 3s ease-in-out infinite;
+}
+
+.hero-lantern--1 {
+  left: 12%;
+}
+
+.hero-lantern--2 {
+  left: 27%;
+  animation-delay: -1s;
+}
+
+.hero-lantern--3 {
+  left: 42%;
+  animation-delay: -2s;
+}
+
+.hero-lantern.is-released {
+  transform: translateY(calc(-1 * var(--rise)));
+  cursor: default;
+  animation: none;
+}
+
+.hero-lantern:not(.is-released):hover .hero-lantern__light {
+  transform: scale(1.06);
+}
+
+.hero-lantern:focus-visible {
+  outline: none;
+}
+
+.hero-lantern:focus-visible .hero-lantern__light {
+  outline: 3px solid var(--lantern);
+  outline-offset: 8px;
+}
+
+.hero-lantern__light {
+  width: 46px;
+  height: 60px;
+  border-radius: 42% 42% 30% 30%;
+  background: radial-gradient(circle at 50% 36%, #fff6df 0%, #ffc86a 36%, #ff8a3d 100%);
+  box-shadow:
+    0 0 30px 8px rgba(255, 138, 61, 0.55),
+    0 0 80px 26px rgba(255, 181, 71, 0.25);
+  transition: transform 300ms var(--ease-out);
+  animation: lantern-flicker 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes lantern-flicker {
+  to {
+    filter: brightness(1.12);
+  }
+}
+
+.hero-lantern__text {
+  font-family: var(--font-head);
+  font-size: calc(17px * var(--scale));
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: center;
+  text-wrap: balance;
+  text-shadow: 0 1px 10px rgba(13, 24, 48, 0.95);
+  animation: rise-in 900ms var(--ease-out) 700ms both;
+}
+
+@keyframes lantern-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
   }
 }
 
 @media (max-width: 768px) {
-  .beat.beat--ending {
-    max-height: calc(100dvh - 32px - env(safe-area-inset-top));
+  .topbar {
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+    padding-top: max(14px, env(safe-area-inset-top));
   }
 
-  /* Both options must be fully visible, so an open decision may use more of the screen. */
-  .beat.beat--decision {
-    max-height: 66vh;
-    max-height: 66dvh;
+  .topbar__name {
+    display: none;
   }
 
-  .beat--decision .decision__prompt {
-    font-size: calc(var(--body-size) + 1px);
-    margin-bottom: 14px;
+  .topbar__chapter {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .topbar__badge {
+    display: none;
+  }
+
+  .menu {
+    right: var(--gutter);
+    top: calc(max(14px, env(safe-area-inset-top)) + 54px);
+  }
+
+  .intro {
+    padding-top: max(9vh, calc(env(safe-area-inset-top) + 60px));
+  }
+
+  .intro__actions {
+    margin-top: 22px;
   }
 
   .beats {
@@ -150,260 +876,43 @@ html.is-flying body {
     transform: none;
   }
 
-  .flight-hero {
-    padding: 20px 16px 12px;
-    border-radius: var(--radius);
-    background: var(--card-light-bg);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
+  /* Both options must be fully visible, so an open decision may use more of the screen. */
+  .beat.beat--decision {
+    max-height: 66vh;
+    max-height: 66dvh;
   }
 
-  .flight-hero__hint {
-    margin-top: 12px;
+  .beat--decision .decision__prompt {
+    margin-bottom: 16px;
   }
-}
 
-/* Hero at the start of the flight. Dark text on the dawn sky. */
-.flight-hero {
-  text-align: center;
-  color: var(--ink);
-}
-
-.flight-hero .hero__title {
-  font-size: var(--hero-size);
-  margin: 8px 0 12px;
-}
-
-.flight-hero__hint {
-  margin-top: 20px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--ink-soft);
-}
-
-.text-link {
-  margin-top: 12px;
-  padding: 8px 4px;
-  min-height: 44px;
-  background: none;
-  border: 0;
-  color: var(--ink);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  cursor: pointer;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* Cut sequence: each step rises in as a new card. */
-.cut-step {
-  animation: rise-in 500ms var(--ease-out) both;
-}
-
-.cut-step__action {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-/* "Kai po che!" as the rival kite crosses the string. */
-.shout-flight {
-  position: absolute;
-  left: 50%;
-  top: 14%;
-  margin: 0;
-  transform: translateX(-50%);
-  font-family: var(--font-head);
-  font-size: clamp(40px, 7vw, 72px);
-  font-style: italic;
-  font-weight: 600;
-  color: var(--ink);
-  text-shadow: 0 2px 18px rgba(255, 255, 255, 0.6);
-  white-space: nowrap;
-  pointer-events: none;
-  animation: shout-in 400ms var(--ease-out) both;
-}
-
-@keyframes shout-in {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) scale(0.8);
+  /* A smaller polaroid keeps a photo card inside the bottom sheet. */
+  .beats .polaroid {
+    width: 68%;
+    margin: 2px auto 18px;
+    padding: 8px 8px 26px;
   }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) scale(1);
+
+  /* Leave the released lanterns and their goals visible above the panel; the panel scrolls. */
+  .beat.beat--ending {
+    max-height: 46vh;
+    max-height: 46dvh;
   }
-}
 
-/* Hold button: a 72 px circle whose ring fills over one second. */
-.hold {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  touch-action: none;
-  -webkit-touch-callout: none;
-}
-
-.hold__ring {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: var(--kite);
-  transform: rotate(-90deg);
-}
-
-.hold__track,
-.hold__fill {
-  fill: none;
-  stroke-width: 5;
-}
-
-.hold__track {
-  stroke: rgba(255, 255, 255, 0.35);
-}
-
-.hold__fill {
-  stroke: var(--kite-on);
-  stroke-dasharray: var(--circumference);
-  stroke-dashoffset: var(--circumference);
-  transition: stroke-dashoffset 200ms ease-out;
-}
-
-.hold.is-holding .hold__fill {
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1000ms linear;
-}
-
-.hold:focus-visible {
-  outline: none;
-}
-
-.hold:focus-visible .hold__ring {
-  outline: 3px solid var(--kite);
-  outline-offset: 4px;
-}
-
-/* Ending: lanterns first, then the comparison. */
-.ending__instruction {
-  margin-top: 8px;
-  font-family: var(--font-body);
-  font-size: 15px;
-  font-weight: 600;
-  opacity: 0.85;
-}
-
-.lantern-field {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  --rise: 56vh;
-}
-
-.hero-lantern {
-  position: absolute;
-  /* Anchored at the top so the lights stay level when goals of different lengths appear below them. */
-  top: 70%;
-  width: 150px;
-  margin-left: -75px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 0;
-  border: 0;
-  background: none;
-  color: var(--paper);
-  cursor: pointer;
-  pointer-events: auto;
-  transition: transform 3.5s var(--ease-out);
-  animation: lantern-bob 3s ease-in-out infinite;
-}
-
-.hero-lantern--1 {
-  left: 12%;
-}
-
-.hero-lantern--2 {
-  left: 26%;
-  animation-delay: -1s;
-}
-
-.hero-lantern--3 {
-  left: 40%;
-  animation-delay: -2s;
-}
-
-.hero-lantern.is-released {
-  transform: translateY(calc(-1 * var(--rise)));
-  cursor: default;
-  animation: none;
-}
-
-.hero-lantern:focus-visible {
-  outline: none;
-}
-
-.hero-lantern:focus-visible .hero-lantern__light {
-  outline: 3px solid var(--lantern-core, #ffb547);
-  outline-offset: 6px;
-}
-
-.hero-lantern__light {
-  width: 44px;
-  height: 58px;
-  border-radius: 40% 40% 30% 30%;
-  background: radial-gradient(circle at 50% 40%, #fff3d6 0%, #ffb547 45%, #ff8a3d 100%);
-  box-shadow:
-    0 0 28px 8px rgba(255, 138, 61, 0.6),
-    0 0 70px 22px rgba(255, 181, 71, 0.28);
-}
-
-.hero-lantern__text {
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.4;
-  text-align: center;
-  text-shadow: 0 1px 8px rgba(13, 24, 48, 0.9);
-  animation: rise-in 800ms var(--ease-out) 600ms both;
-}
-
-@keyframes lantern-bob {
-  0%,
-  100% {
-    transform: translateY(0);
+  .hint {
+    left: 50%;
+    bottom: auto;
+    top: calc(max(14px, env(safe-area-inset-top)) + 60px);
   }
-  50% {
-    transform: translateY(-8px);
-  }
-}
 
-@media (max-width: 768px) {
   .lantern-field {
-    --rise: 22vh;
+    --rise: 24vh;
   }
 
   .hero-lantern {
-    top: 32%;
-    width: 104px;
-    margin-left: -52px;
+    top: 50%;
+    width: 108px;
+    margin-left: -54px;
   }
 
   .hero-lantern--1 {
@@ -424,16 +933,11 @@ html.is-flying body {
   }
 
   .hero-lantern__text {
-    font-size: 14px;
-  }
-
-  /* Leave the released lanterns and their goals visible above the panel. */
-  .beat.beat--ending {
-    max-height: 56vh;
-    max-height: 56dvh;
+    font-size: 15px;
+    hyphens: auto;
   }
 
   .shout-flight {
-    top: 10%;
+    top: 12%;
   }
 }

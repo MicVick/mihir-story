@@ -1,9 +1,11 @@
-import { Canvas, useFrame } from '@react-three/fiber';
-import { useMemo } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useMemo } from 'react';
+import { updateSound } from '../audio/sound';
 import { cutStop } from '../content/beats';
 import { isSmallScreen, prefersReducedMotion } from '../lib/device';
-import { useFlight } from '../state/store';
+import { LAUNCH_MS, useFlight } from '../state/store';
 import { CameraRig } from './CameraRig';
+import { Birds } from './Birds';
 import { Clouds } from './Clouds';
 import { cutAltitude, fallEnd, landedAt, riseAltitude, riseDuration, SNAP, SLACK, veilAt } from './cutTimeline';
 import { frame } from './frame';
@@ -26,6 +28,8 @@ function driftEnvelope(seconds: number): number {
   if (seconds < 0.9) return 1;
   return 1 - smoothstep(0.9, 1.9, seconds);
 }
+
+const easeInOutSine = (t: number) => -(Math.cos(Math.PI * Math.min(1, Math.max(0, t))) - 1) / 2;
 
 const ease = (current: number, target: number, rate: number, dt: number) =>
   current + (target - current) * (1 - Math.exp(-dt * rate));
@@ -80,11 +84,18 @@ function AltitudeDriver() {
         if (r >= riseDuration(s.cut.id, reduced)) s.finishRelaunch();
       }
     } else {
-      next = altitude + (s.targetAltitude - altitude) * (1 - Math.exp(-dt * DAMPING));
-      if (Math.abs(s.targetAltitude - next) < 0.01) next = s.targetAltitude;
+      const launchT = s.launchedAt === null ? Infinity : now - s.launchedAt;
+      if (launchT < LAUNCH_MS) {
+        // "Hold to launch": the kite lifts off the parapet and climbs to the first card.
+        next = s.targetAltitude * easeInOutSine(launchT / LAUNCH_MS);
+      } else {
+        next = altitude + (s.targetAltitude - altitude) * (1 - Math.exp(-dt * DAMPING));
+        if (Math.abs(s.targetAltitude - next) < 0.01) next = s.targetAltitude;
+      }
       frame.landed = 0;
       frame.skyAltitude = next;
     }
+    frame.perched = s.phase === 'intro' ? 1 : s.cut ? 0 : 1 - smoothstep(0.4, 9, next);
 
     frame.desat = ease(frame.desat, desatTarget, s.phase === 'relaunch' ? 1.6 : 2.5, dt);
     frame.rain = ease(frame.rain, rainTarget, 1.5, dt);
@@ -102,6 +113,53 @@ function AltitudeDriver() {
   return null;
 }
 
+/** Dev-only handle on the three.js scene, for checking the frame budget from the console. */
+function DevHandle() {
+  const scene = useThree((s) => s.scene);
+  useEffect(() => {
+    if (import.meta.env.DEV) (window as unknown as { __scene: unknown }).__scene = scene;
+  }, [scene]);
+  return null;
+}
+
+/**
+ * Keeps the flight smooth on slower devices: if the frame rate stays under
+ * 40 fps for a few seconds, the canvas drops its pixel ratio, down to 1.
+ */
+function AdaptiveResolution() {
+  const setDpr = useThree((s) => s.setDpr);
+  const sample = useMemo(() => ({ frames: 0, time: 0 }), []);
+  useFrame((state, delta) => {
+    // Ignore long pauses, such as a hidden tab.
+    if (delta > 0.5) return;
+    sample.frames++;
+    sample.time += delta;
+    if (sample.time < 3) return;
+    const fps = sample.frames / sample.time;
+    sample.frames = 0;
+    sample.time = 0;
+    const dpr = state.viewport.dpr;
+    if (fps < 40 && dpr > 1) setDpr(Math.max(1, dpr - 0.5));
+  });
+  return null;
+}
+
+/** Tells the page the scene is drawing, so "Hold to launch" can appear. */
+function ReadySignal() {
+  const frames = useMemo(() => ({ count: 0 }), []);
+  useFrame(() => {
+    // After two frames the shaders are compiled and the first picture is on screen.
+    if (++frames.count === 2) useFlight.setState({ sceneReady: true });
+  });
+  return null;
+}
+
+/** Wind rises with altitude and gusts at decisions. */
+function SoundDriver() {
+  useFrame(() => updateSound(useFlight.getState().altitude, frame.gust));
+  return null;
+}
+
 export function Scene() {
   return (
     <Canvas
@@ -111,12 +169,17 @@ export function Scene() {
       gl={{ antialias: true, powerPreference: 'high-performance' }}
     >
       <AltitudeDriver />
+      <SoundDriver />
+      <AdaptiveResolution />
+      <ReadySignal />
+      {import.meta.env.DEV && <DevHandle />}
       <CameraRig />
       <Sky />
       <Clouds />
       <Lanterns />
       <Rooftops />
       <RivalKites />
+      <Birds />
       <KiteString />
       <Kite />
       <RestingKite />

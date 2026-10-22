@@ -9,7 +9,7 @@ import {
   type CutId,
   type Stop,
 } from '../content/beats';
-import { ending, type Choice, type KiteId } from '../content/story';
+import { chapters, ending, type Choice, type KiteId } from '../content/story';
 import { initialMode } from '../lib/device';
 
 export type Phase = 'intro' | 'flying' | 'deciding' | 'revealing' | 'cut' | 'relaunch' | 'ending';
@@ -48,9 +48,17 @@ export interface FlightState {
   cutsDone: CutId[];
   /** Indexes of the hero lanterns released in the ending. */
   lanterns: number[];
+  /** performance.now() when "Hold to launch" completed, or null while the kite waits on the terrace. */
+  launchedAt: number | null;
+  /** The spool menu is open; flight input pauses. */
+  menuOpen: boolean;
+  /** The 3D scene has drawn its first frame, so the kite can be launched. */
+  sceneReady: boolean;
 }
 
 interface FlightActions {
+  /** "Hold to launch": the kite lifts off the parapet and climbs to the first card. */
+  launch: () => void;
   /** Moves the target altitude by a raw input delta in metres. */
   nudge: (metres: number) => void;
   /** Called every frame with the damped (or scripted) altitude. */
@@ -69,6 +77,9 @@ interface FlightActions {
   setMode: (mode: FlightState['mode']) => void;
   setSound: (on: boolean) => void;
   setPresenter: (on: boolean) => void;
+  setMenuOpen: (open: boolean) => void;
+  /** Spool menu: fly back to a chapter already reached. */
+  jumpTo: (chapterIndex: number) => void;
   /** Clears choices and progress for "Fly again". */
   resetFlight: () => void;
 }
@@ -78,6 +89,11 @@ const STORAGE_KEY = 'kite-story:v1';
 export const REVEAL_HOLD_MS = 1500;
 /** How far "Continue" lifts the kite, so the move is visible. */
 const CONTINUE_METRES = 15;
+/** The launch carries the kite off the terrace to the first card. */
+export const LAUNCH_TO = 45;
+export const LAUNCH_MS = 2600;
+/** Once launched, the kite never sinks back onto the terrace except in a cut. */
+export const MIN_FLIGHT = 20;
 
 type Saved = Pick<FlightState, 'choices' | 'visited' | 'cutsDone'>;
 
@@ -117,6 +133,12 @@ function presenterFromUrl(): boolean {
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
+/** How far into a chapter's band the spool menu lands. */
+const JUMP_INTO = 6;
+
+const launching = (s: Pick<FlightState, 'launchedAt'>) =>
+  s.launchedAt !== null && performance.now() - s.launchedAt < LAUNCH_MS;
+
 /** Phase implied by altitude while the visitor is in control of the climb. */
 function phaseAt(altitude: number, stop: Stop | undefined): Phase {
   if (altitude >= ENDING_ALTITUDE) return 'ending';
@@ -135,6 +157,8 @@ const fresh = {
   cut: null,
   cutsDone: [] as CutId[],
   lanterns: [],
+  launchedAt: null,
+  menuOpen: false,
 };
 
 const saved = loadSaved();
@@ -145,12 +169,22 @@ export const useFlight = create<FlightState & FlightActions>()((set, get) => ({
   kite: kiteFor(saved?.cutsDone ?? []),
   ceiling: ceilingFor(saved?.choices ?? {}, saved?.cutsDone ?? []),
   sound: false,
+  sceneReady: false,
   presenter: presenterFromUrl(),
   mode: initialMode(),
+
+  launch: () =>
+    set((s) =>
+      s.phase === 'intro' && s.sceneReady
+        ? { phase: 'flying', launchedAt: performance.now(), targetAltitude: Math.min(LAUNCH_TO, s.ceiling) }
+        : {},
+    ),
 
   nudge: (metres) =>
     set((s) => {
       let phase = s.phase;
+      // The kite waits on the terrace for "Hold to launch", and the launch itself is scripted.
+      if (phase === 'intro' || s.menuOpen || launching(s)) return {};
       // Cuts are scripted: input waits until the new kite is back in the air.
       if (phase === 'cut' || phase === 'relaunch') return {};
       if (phase === 'revealing') {
@@ -158,8 +192,7 @@ export const useFlight = create<FlightState & FlightActions>()((set, get) => ({
         if (performance.now() - (s.lastChoice?.at ?? 0) < REVEAL_HOLD_MS) return {};
         phase = 'flying';
       }
-      if (phase === 'intro' && metres > 0) phase = 'flying';
-      return { phase, targetAltitude: clamp(s.targetAltitude + metres, 0, s.ceiling) };
+      return { phase, targetAltitude: clamp(s.targetAltitude + metres, MIN_FLIGHT, s.ceiling) };
     }),
 
   setAltitude: (altitude) => {
@@ -238,7 +271,19 @@ export const useFlight = create<FlightState & FlightActions>()((set, get) => ({
   setMode: (mode) => set({ mode }),
   setSound: (sound) => set({ sound }),
   setPresenter: (presenter) => set({ presenter }),
-  resetFlight: () => set({ ...fresh, kite: 1, ceiling: ceilingFor({}, []) }),
+  setMenuOpen: (menuOpen) => set({ menuOpen }),
+
+  jumpTo: (chapterIndex) =>
+    set((s) => {
+      const chapter = chapters[chapterIndex];
+      const free = s.phase === 'flying' || s.phase === 'deciding' || s.phase === 'revealing' || s.phase === 'ending';
+      if (!chapter || !s.visited.includes(chapterIndex) || !free || launching(s)) return {};
+      // Land just inside the chapter, on its first card, or the reveal of a decision already made.
+      const target = chapterIndex === 0 ? LAUNCH_TO : chapter.altitude + JUMP_INTO;
+      return { phase: 'flying', targetAltitude: clamp(target, MIN_FLIGHT, s.ceiling) };
+    }),
+
+  resetFlight: () => set({ ...fresh, kite: 1, ceiling: ceilingFor({}, []), presenter: get().presenter }),
 }));
 
 useFlight.subscribe((s, prev) => {

@@ -10,8 +10,14 @@ interface Props {
 export function Comparison({ comparison, tone }: Props) {
   return (
     <article className={`card card--${tone} comparison`}>
-      <h3 className="card__title">{comparison.heading}</h3>
-      <p className="card__body">{comparison.note}</p>
+      {/* Five small kites, lit for each choice that matched. The heading says the same in words. */}
+      <div className="comparison__kites" aria-hidden="true">
+        {comparison.rows.map((row) => (
+          <span key={row.id} className={`comparison__kite${row.match ? ' is-match' : ''}`} />
+        ))}
+      </div>
+      <h3 className="comparison__heading">{comparison.heading}</h3>
+      <p className="comparison__note">{comparison.note}</p>
       <table className="comparison__table">
         <thead>
           <tr>

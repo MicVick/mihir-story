@@ -13,8 +13,10 @@ export interface StoryCard {
   title?: string;
   body?: string;
   stat?: string;
-  /** Path under /public, e.g. '/photos/terrace.webp'. Hidden cleanly if the file is missing. */
+  /** File name in public/photos, e.g. 'terrace.webp'. The polaroid only shows once the file exists. */
   photo?: string;
+  /** Describes the photo for screen readers. */
+  photoAlt?: string;
 }
 
 export interface Decision {
@@ -61,6 +63,25 @@ export const intro = {
   launch: 'Hold to launch',
   readStory: 'Read the story instead',
   hint: 'Scroll or swipe up to fly higher.',
+  reducedMotion: 'Your device asks for reduced motion. The story also reads well as a page.',
+  reducedMotionRead: 'Read the story',
+  reducedMotionStay: 'Keep flying',
+};
+
+export const menu = {
+  open: 'Open the chapter menu',
+  close: 'Close',
+  heading: 'Chapters',
+  locked: 'Not reached yet',
+  sound: 'Sound',
+  soundOn: 'Turn sound on',
+  soundOff: 'Turn sound off',
+  on: 'On',
+  off: 'Off',
+  presenter: 'Presenter mode',
+  presenterHint: 'Press P to start or stop',
+  readStory: 'Read the story instead',
+  progress: 'Flight progress',
 };
 
 export const ui = {
@@ -89,7 +110,9 @@ export const chapters: Chapter[] = [
         id: 'terrace',
         body: 'Every January, Vadodara moves to its rooftops. This is where I grew up, studying at Bright School and spending Uttarayan on the terrace with my family. My father ran a small business in the city.',
         stat: 'Class X: 92.5%, top 0.36% in the state.',
-        // Suggested photo slot: childhood or family, e.g. photo: '/photos/terrace.webp'
+        // Photo slot: childhood or family. Add public/photos/terrace.webp to show it.
+        photo: 'terrace.webp',
+        photoAlt: 'Mihir as a child with his family on the terrace in Vadodara', // [CONFIRM]
       },
     ],
   },
@@ -141,7 +164,8 @@ export const chapters: Chapter[] = [
     title: 'The cut',
     period: '19',
     altitude: 250,
-    fallTo: 60,
+    // The cut kite falls all the way back to the home terrace.
+    fallTo: 0,
     sky: 'overcast',
     kite: 1,
     cut: 'snap',
@@ -167,7 +191,9 @@ export const chapters: Chapter[] = [
       {
         id: 'nexus',
         body: "After COVID, campus came back without its culture. Seniors and juniors barely met. With a few classmates, I convinced the HoD and professors to start Nexus, the Computer Science department's official club: hackathons, seminars, sports and cultural events. Engagement grew 200% in a year.",
-        // Suggested photo slot: NIT Surat or WictroniX team
+        // Photo slot: NIT Surat or the WictroniX team. Add public/photos/building.webp to show it.
+        photo: 'building.webp',
+        photoAlt: 'Mihir with his team at NIT Surat', // [CONFIRM]
       },
       {
         id: 'wictronix',
@@ -204,8 +230,8 @@ export const chapters: Chapter[] = [
     title: 'The stall',
     period: '2024, graduation',
     altitude: 450,
-    // Both cuts land on the rooftops, so Decision 4 can show two kites on a terrace.
-    fallTo: 60,
+    // Both cuts land on the home terrace, so Decision 4 can show two kites side by side there.
+    fallTo: 0,
     sky: 'hazyAfternoon',
     kite: 2,
     cut: 'slack',
@@ -284,7 +310,9 @@ export const chapters: Chapter[] = [
       {
         id: 'beyond-work',
         body: 'Off the terrace, I travel, often to spiritual places like Palitana, Varanasi and Shravanabelagola. I read non-fiction, play chess and table tennis, and my writing on Quora has 100K+ views.',
-        // Suggested photo slot: IIMA
+        // Photo slot: IIM Ahmedabad. Add public/photos/iima.webp to show it.
+        photo: 'iima.webp',
+        photoAlt: 'Mihir at IIM Ahmedabad', // [CONFIRM]
       },
     ],
   },

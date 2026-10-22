@@ -119,6 +119,8 @@ export function KiteString() {
     hand.set(camera.position.x, camera.position.y - handDepth * tanHalf * 1.25, camera.position.z - handDepth);
 
     parts.material.color.copy(DAY).lerp(NIGHT, frame.sky.night);
+    // The slack string settles out of sight once the kite lies on the terrace.
+    parts.material.opacity = 0.9 * (slackCut ? 1 - frame.landed : 1);
     parts.pieceMaterial.color.copy(parts.material.color);
 
     if (!snapped) {

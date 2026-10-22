@@ -7,6 +7,7 @@
     <meta name="description" content="An interactive story told in one kite flight over Vadodara." />
     <meta name="theme-color" content="#F4B8A0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Mihir Gandhi | The Kite" />
@@ -14,19 +15,39 @@
     <meta property="og:image" content="/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A teal kite flying at sunset over Vadodara, with lanterns rising around it." />
+    <!-- Once the site has its final URL, make og:image absolute and add og:url (WhatsApp needs an absolute image URL). -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="/og-image.jpg" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fonts load without blocking the first paint; the fallbacks show until they arrive. -->
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Inter:wght@400..600&display=swap"
+      media="print"
+      onload="this.media='all'"
     />
     <!-- Noto Sans Gujarati is subset to the single word on the opening screen. -->
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@500&display=swap&text=%E0%AA%89%E0%AA%A4%E0%AB%8D%E0%AA%A4%E0%AA%B0%E0%AA%BE%E0%AA%AF%E0%AA%A3"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Inter:wght@400..600&display=swap"
+      />
+    </noscript>
+    <style>
+      /* The dawn sky shows at once, before any script runs. */
+      html {
+        background: linear-gradient(180deg, #f4b8a0, #fce6d2) fixed;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
