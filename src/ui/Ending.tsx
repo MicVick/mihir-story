@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type { CardTone } from '../content/palette';
 import { ending, ui } from '../content/story';
 import { hasWebGL, isLowEnd } from '../lib/device';
@@ -48,8 +49,34 @@ export function EndingActions({ inStory }: { inStory: boolean }) {
   );
 }
 
-/** Flight ending at night: comparison, closing line and contact buttons. Lanterns join in Phase 4. */
+/** Pause after the last lantern rises before the comparison appears. */
+const PANEL_DELAY_MS = 1500;
+
+/**
+ * Flight ending at night. First the visitor releases the three lanterns
+ * (see LanternField); then the comparison, closing line and contact buttons.
+ */
 export function Ending({ tone }: { tone: CardTone }) {
+  const allReleased = useFlight((s) => s.lanterns.length >= ending.lanterns.length);
+  const [panel, setPanel] = useState(allReleased);
+
+  useEffect(() => {
+    if (!allReleased) {
+      setPanel(false);
+      return;
+    }
+    const id = window.setTimeout(() => setPanel(true), PANEL_DELAY_MS);
+    return () => window.clearTimeout(id);
+  }, [allReleased]);
+
+  if (!panel) {
+    return (
+      <div className={`card card--${tone} ending__intro`}>
+        <p>{ending.intro}</p>
+        <p className="ending__instruction">{ending.instruction}</p>
+      </div>
+    );
+  }
   return (
     <div className="ending">
       <p className={`card card--${tone} ending__intro`}>{ending.intro}</p>

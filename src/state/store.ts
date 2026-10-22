@@ -1,9 +1,32 @@
 import { create } from 'zustand';
-import { ceilingFor, chapterAt, ENDING_ALTITUDE, MAX_ALTITUDE } from '../content/beats';
-import type { Choice, KiteId } from '../content/story';
+import {
+  ceilingFor,
+  chapterAt,
+  cutStop,
+  ENDING_ALTITUDE,
+  kiteFor,
+  nextStop,
+  type CutId,
+  type Stop,
+} from '../content/beats';
+import { ending, type Choice, type KiteId } from '../content/story';
 import { initialMode } from '../lib/device';
 
 export type Phase = 'intro' | 'flying' | 'deciding' | 'revealing' | 'cut' | 'relaunch' | 'ending';
+
+export interface CutState {
+  id: CutId;
+  /** performance.now() when the cut began. */
+  startedAt: number;
+  /**
+   * 0 while the kite falls; then one step per cut card. The snap cut ends on
+   * its last card with "Re-tie the string". The slack cut goes on to its
+   * decision, then the reveal with the launch of the new kite.
+   */
+  step: number;
+  /** performance.now() when the relaunch began, once it has. */
+  relaunchAt?: number;
+}
 
 export interface FlightState {
   phase: Phase;
@@ -16,22 +39,33 @@ export interface FlightState {
   sound: boolean;
   mode: 'flight' | 'story';
   presenter: boolean;
-  /** Highest altitude the visitor may climb to right now. Decisions lower it. */
+  /** Highest altitude the visitor may climb to right now. Decisions and cuts lower it. */
   ceiling: number;
   /** The most recent choice in flight mode, for the reveal drift. */
   lastChoice: { side: Choice; at: number } | null;
+  /** The cut in progress, from the snap or slack until the new kite is back in the air. */
+  cut: CutState | null;
+  cutsDone: CutId[];
+  /** Indexes of the hero lanterns released in the ending. */
+  lanterns: number[];
 }
 
 interface FlightActions {
   /** Moves the target altitude by a raw input delta in metres. */
   nudge: (metres: number) => void;
-  /** Called every frame with the damped altitude. */
+  /** Called every frame with the damped (or scripted) altitude. */
   setAltitude: (altitude: number) => void;
   /** Records a choice. A decision cannot be changed once made. */
   choose: (decisionId: string, choice: Choice) => void;
   /** Leaves the reveal and unlocks the climb ("Continue"). */
   continueFlight: () => void;
-  markVisited: (chapterIndex: number) => void;
+  /** Moves the cut on to its next card. */
+  advanceCut: () => void;
+  /** "Re-tie the string", or the launch of the new kite after Decision 4. */
+  relaunch: () => void;
+  /** Called by the scene when the new kite has climbed back. */
+  finishRelaunch: () => void;
+  releaseLantern: (index: number) => void;
   setMode: (mode: FlightState['mode']) => void;
   setSound: (on: boolean) => void;
   setPresenter: (on: boolean) => void;
@@ -45,7 +79,7 @@ export const REVEAL_HOLD_MS = 1500;
 /** How far "Continue" lifts the kite, so the move is visible. */
 const CONTINUE_METRES = 15;
 
-type Saved = Pick<FlightState, 'choices' | 'visited'>;
+type Saved = Pick<FlightState, 'choices' | 'visited' | 'cutsDone'>;
 
 // localStorage is optional: the site must work fully without it.
 function loadSaved(): Saved | null {
@@ -56,6 +90,9 @@ function loadSaved(): Saved | null {
     return {
       choices: parsed.choices && typeof parsed.choices === 'object' ? parsed.choices : {},
       visited: Array.isArray(parsed.visited) ? parsed.visited : [0],
+      cutsDone: Array.isArray(parsed.cutsDone)
+        ? parsed.cutsDone.filter((c): c is CutId => c === 'snap' || c === 'slack')
+        : [],
     };
   } catch {
     return null;
@@ -78,42 +115,44 @@ function presenterFromUrl(): boolean {
   }
 }
 
-const initial: FlightState = {
-  phase: 'intro',
-  altitude: 0,
-  targetAltitude: 0,
-  chapterIndex: 0,
-  kite: 1,
-  choices: {},
-  visited: [0],
-  sound: false,
-  mode: 'flight',
-  presenter: false,
-  ceiling: MAX_ALTITUDE,
-  lastChoice: null,
-};
-
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
 /** Phase implied by altitude while the visitor is in control of the climb. */
-function phaseAt(altitude: number, ceiling: number): Phase {
+function phaseAt(altitude: number, stop: Stop | undefined): Phase {
   if (altitude >= ENDING_ALTITUDE) return 'ending';
-  if (ceiling < MAX_ALTITUDE && altitude >= ceiling - 0.5) return 'deciding';
+  if (stop?.kind === 'decision' && altitude >= stop.altitude - 0.5) return 'deciding';
   return 'flying';
 }
+
+const fresh = {
+  phase: 'intro' as Phase,
+  altitude: 0,
+  targetAltitude: 0,
+  chapterIndex: 0,
+  choices: {},
+  visited: [0],
+  lastChoice: null,
+  cut: null,
+  cutsDone: [] as CutId[],
+  lanterns: [],
+};
 
 const saved = loadSaved();
 
 export const useFlight = create<FlightState & FlightActions>()((set, get) => ({
-  ...initial,
+  ...fresh,
   ...saved,
-  ceiling: ceilingFor(saved?.choices ?? {}),
+  kite: kiteFor(saved?.cutsDone ?? []),
+  ceiling: ceilingFor(saved?.choices ?? {}, saved?.cutsDone ?? []),
+  sound: false,
   presenter: presenterFromUrl(),
   mode: initialMode(),
 
   nudge: (metres) =>
     set((s) => {
       let phase = s.phase;
+      // Cuts are scripted: input waits until the new kite is back in the air.
+      if (phase === 'cut' || phase === 'relaunch') return {};
       if (phase === 'revealing') {
         // Hold the reveal briefly so it is read, then any input moves on.
         if (performance.now() - (s.lastChoice?.at ?? 0) < REVEAL_HOLD_MS) return {};
@@ -122,55 +161,88 @@ export const useFlight = create<FlightState & FlightActions>()((set, get) => ({
       if (phase === 'intro' && metres > 0) phase = 'flying';
       return { phase, targetAltitude: clamp(s.targetAltitude + metres, 0, s.ceiling) };
     }),
+
   setAltitude: (altitude) => {
     const s = get();
     const chapterIndex = chapterAt(altitude);
+    const visited = s.visited.includes(chapterIndex)
+      ? s.visited
+      : [...s.visited, chapterIndex].sort((a, b) => a - b);
     const steering = s.phase === 'flying' || s.phase === 'deciding' || s.phase === 'ending';
-    set({
-      altitude,
-      chapterIndex,
-      phase: steering ? phaseAt(altitude, s.ceiling) : s.phase,
-      visited: s.visited.includes(chapterIndex) ? s.visited : [...s.visited, chapterIndex].sort((a, b) => a - b),
-    });
+    const stop = nextStop(s.choices, s.cutsDone);
+
+    if (steering && stop?.kind === 'cut' && altitude >= stop.altitude - 0.5) {
+      set({
+        altitude,
+        chapterIndex,
+        visited,
+        phase: 'cut',
+        cut: { id: stop.id, startedAt: performance.now(), step: 0 },
+      });
+      return;
+    }
+    set({ altitude, chapterIndex, visited, phase: steering ? phaseAt(altitude, stop) : s.phase });
   },
+
   choose: (decisionId, choice) => {
     const s = get();
     if (s.choices[decisionId]) return;
     const choices = { ...s.choices, [decisionId]: choice };
+    if (s.phase === 'cut' && s.cut) {
+      // Decision 4 is made on the rooftop during the slack cut: show the reveal next.
+      set({ choices, cut: { ...s.cut, step: s.cut.step + 1 } });
+      return;
+    }
     set({
       choices,
-      ceiling: ceilingFor(choices),
+      ceiling: ceilingFor(choices, s.cutsDone),
       ...(s.mode === 'flight' && { phase: 'revealing' as const, lastChoice: { side: choice, at: performance.now() } }),
     });
   },
+
   continueFlight: () =>
     set((s) => ({
       phase: 'flying',
       targetAltitude: clamp(s.targetAltitude + CONTINUE_METRES, 0, s.ceiling),
     })),
-  markVisited: (chapterIndex) => {
-    if (get().visited.includes(chapterIndex)) return;
-    set((s) => ({ visited: [...s.visited, chapterIndex].sort((a, b) => a - b) }));
+
+  advanceCut: () => set((s) => (s.cut ? { cut: { ...s.cut, step: s.cut.step + 1 } } : {})),
+
+  relaunch: () => {
+    const s = get();
+    if (!s.cut || s.phase !== 'cut') return;
+    const cutsDone = [...s.cutsDone, s.cut.id];
+    set({
+      phase: 'relaunch',
+      cut: { ...s.cut, relaunchAt: performance.now() },
+      cutsDone,
+      kite: kiteFor(cutsDone),
+      ceiling: ceilingFor(s.choices, cutsDone),
+    });
   },
+
+  finishRelaunch: () => {
+    const s = get();
+    if (!s.cut) return;
+    const { riseTo } = cutStop(s.cut.id);
+    set({ phase: 'flying', cut: null, altitude: riseTo, targetAltitude: riseTo });
+  },
+
+  releaseLantern: (index) =>
+    set((s) =>
+      s.lanterns.includes(index) || index < 0 || index >= ending.lanterns.length
+        ? {}
+        : { lanterns: [...s.lanterns, index] },
+    ),
+
   setMode: (mode) => set({ mode }),
   setSound: (sound) => set({ sound }),
   setPresenter: (presenter) => set({ presenter }),
-  resetFlight: () =>
-    set({
-      phase: 'intro',
-      altitude: 0,
-      targetAltitude: 0,
-      chapterIndex: 0,
-      kite: 1,
-      choices: {},
-      visited: [0],
-      ceiling: ceilingFor({}),
-      lastChoice: null,
-    }),
+  resetFlight: () => set({ ...fresh, kite: 1, ceiling: ceilingFor({}, []) }),
 }));
 
 useFlight.subscribe((s, prev) => {
-  if (s.choices !== prev.choices || s.visited !== prev.visited) {
-    save({ choices: s.choices, visited: s.visited });
+  if (s.choices !== prev.choices || s.visited !== prev.visited || s.cutsDone !== prev.cutsDone) {
+    save({ choices: s.choices, visited: s.visited, cutsDone: s.cutsDone });
   }
 });

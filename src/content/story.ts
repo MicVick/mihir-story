@@ -204,7 +204,8 @@ export const chapters: Chapter[] = [
     title: 'The stall',
     period: '2024, graduation',
     altitude: 450,
-    fallTo: 300,
+    // Both cuts land on the rooftops, so Decision 4 can show two kites on a terrace.
+    fallTo: 60,
     sky: 'hazyAfternoon',
     kite: 2,
     cut: 'slack',

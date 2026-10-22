@@ -5,8 +5,10 @@ import { chapters, ending, intro, ui, type Choice } from '../content/story';
 import { compareChoices } from '../state/compare';
 import { useFlight } from '../state/store';
 import { Chips } from './Chips';
+import { CutSequence } from './CutSequence';
 import { DecisionPanel } from './DecisionPanel';
 import { Ending } from './Ending';
+import { LanternField } from './LanternField';
 import { RevealCard } from './RevealCard';
 import { StoryCard } from './StoryCard';
 
@@ -15,8 +17,11 @@ import { StoryCard } from './StoryCard';
  * whose altitude band holds the kite is visible. CSS fades and lifts it in.
  */
 export function FlightOverlay() {
-  const active = useFlight((s) => beatIndexAt(s.altitude));
+  // During a cut the altitude-based cards step aside for the cut sequence.
+  const active = useFlight((s) => (s.phase === 'cut' || s.phase === 'relaunch' ? -1 : beatIndexAt(s.altitude)));
+  const atEnding = useFlight((s) => s.phase === 'ending');
   const choices = useFlight((s) => s.choices);
+  const lanterns = useFlight((s) => s.lanterns.length);
 
   return (
     <>
@@ -25,8 +30,10 @@ export function FlightOverlay() {
           <BeatView key={beat.id} beat={beat} active={i === active} />
         ))}
       </div>
+      {atEnding && <LanternField />}
+      <CutSequence />
       <p className="sr-only" aria-live="polite">
-        {liveText(beats[active], choices)}
+        {active >= 0 ? liveText(beats[active], choices, lanterns) : ''}
       </p>
     </>
   );
@@ -110,7 +117,7 @@ function Hero() {
   );
 }
 
-function liveText(beat: Beat, choices: Record<string, Choice>): string {
+function liveText(beat: Beat, choices: Record<string, Choice>, lanterns: number): string {
   switch (beat.kind) {
     case 'hero':
       return `${intro.heroTitle}. ${intro.heroSubtitle}`;
@@ -128,8 +135,9 @@ function liveText(beat: Beat, choices: Record<string, Choice>): string {
       return `${ui.youChose}: ${decision.options[chosen].label}. ${ui.iChose}: ${decision.options[decision.mihir].label}. ${decision.reveal}`;
     }
     case 'ending': {
+      if (lanterns < ending.lanterns.length) return `${ending.intro} ${ending.instruction}`;
       const comparison = compareChoices(choices);
-      return comparison.complete ? `${ending.intro} ${comparison.heading} ${comparison.note}` : ending.intro;
+      return comparison.complete ? `${comparison.heading} ${comparison.note}` : ending.intro;
     }
   }
 }

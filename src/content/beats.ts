@@ -69,12 +69,62 @@ export function chapterAt(altitude: number): number {
 /** Altitude where the ending (night and lanterns) begins. */
 export const ENDING_ALTITUDE = chapters[chapters.length - 1].altitude;
 
-/** Where the climb locks for each decision: just inside the decision's band, once its card is up. */
-export const decisionLocks = beats.flatMap((b) =>
-  b.kind === 'decision' ? [{ id: b.decision.id, altitude: b.start + Math.min(12, (b.end - b.start) * 0.25) }] : [],
-);
+export type CutId = 'snap' | 'slack';
 
-/** The highest altitude allowed: the lock of the first decision not yet made. */
-export function ceilingFor(choices: Record<string, Choice>): number {
-  return decisionLocks.find((lock) => !choices[lock.id])?.altitude ?? MAX_ALTITUDE;
+export type Stop =
+  | { kind: 'decision'; id: Decision['id']; altitude: number }
+  | {
+      kind: 'cut';
+      id: CutId;
+      chapter: number;
+      /** Where the cut begins: the chapter's trigger altitude. */
+      altitude: number;
+      /** Where the kite comes to rest on the rooftops. */
+      fallTo: number;
+      /** Where the relaunched kite climbs back to: the next chapter. */
+      riseTo: number;
+    };
+
+/**
+ * Everything that stops the climb, in altitude order. A decision locks just
+ * inside its band, once its card is up. A cut starts at its chapter's
+ * altitude; a decision inside a cut chapter is made during the cut.
+ */
+export const stops: Stop[] = [
+  ...chapters.flatMap((chapter, i): Stop[] =>
+    chapter.cut
+      ? [
+          {
+            kind: 'cut',
+            id: chapter.cut,
+            chapter: chapter.index,
+            altitude: chapter.altitude,
+            fallTo: chapter.fallTo ?? 60,
+            riseTo: chapters[i + 1]?.altitude ?? MAX_ALTITUDE,
+          },
+        ]
+      : [],
+  ),
+  ...beats.flatMap((b): Stop[] =>
+    b.kind === 'decision' && !chapters[b.chapter].cut
+      ? [{ kind: 'decision', id: b.decision.id, altitude: b.start + Math.min(12, (b.end - b.start) * 0.25) }]
+      : [],
+  ),
+].sort((a, b) => a.altitude - b.altitude);
+
+export const cutStop = (id: CutId) => stops.find((s) => s.kind === 'cut' && s.id === id) as Extract<Stop, { kind: 'cut' }>;
+
+/** The first stop not yet passed. */
+export function nextStop(choices: Record<string, Choice>, cutsDone: CutId[]): Stop | undefined {
+  return stops.find((s) => (s.kind === 'cut' ? !cutsDone.includes(s.id) : !choices[s.id]));
+}
+
+/** The highest altitude allowed: the next stop, or the top of the sky. */
+export function ceilingFor(choices: Record<string, Choice>, cutsDone: CutId[]): number {
+  return nextStop(choices, cutsDone)?.altitude ?? MAX_ALTITUDE;
+}
+
+/** Kite 1 until the first cut, Kite 2 until the second, then Kite 3. */
+export function kiteFor(cutsDone: CutId[]): 1 | 2 | 3 {
+  return cutsDone.includes('slack') ? 3 : cutsDone.includes('snap') ? 2 : 1;
 }

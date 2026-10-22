@@ -1,182 +1,65 @@
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
-import {
-  BufferGeometry,
-  Color,
-  DoubleSide,
-  Float32BufferAttribute,
-  Group,
-  LineBasicMaterial,
-  QuadraticBezierCurve3,
-  ShaderMaterial,
-  Vector3,
-} from 'three';
+import { useEffect, useMemo, useRef, type RefObject } from 'react';
+import { Euler, Vector3, type Group } from 'three';
+import { cutStop } from '../content/beats';
 import { kites } from '../content/palette';
 import { prefersReducedMotion } from '../lib/device';
 import { useFlight } from '../state/store';
+import { SLACK, SNAP } from './cutTimeline';
 import { frame, WORLD_PER_METRE } from './frame';
+import {
+  BOTTOM,
+  BRIDLE,
+  createSailMaterial,
+  createSparMaterial,
+  sailGeometry,
+  sparGeometry,
+  tailGeometry,
+} from './kiteModel';
+import { smoothstep } from './skyMath';
 
-// Kite-local points. The kite faces +z (the camera); wing tips bow back.
-const TOP = [0, 0.8, 0];
-const LEFT = [-0.62, 0.12, -0.12];
-const RIGHT = [0.62, 0.12, -0.12];
-const BOTTOM = [0, -0.8, 0];
-const CENTRE = [0, 0.1, 0];
-const BRIDLE = new Vector3(0, 0.05, 0.25);
+/** A kite lying back on a terrace roof. */
+const REST_ROTATION = new Euler(-1.2, 0, 0.35);
+/** The fallen kite rests a little behind the flying plane, on the landing terrace. */
+export const REST_Z = -3;
+/** At Decision 4 the old kite rests on the left (option A) and the new one on the right (option B). */
+const SIDE_X = 1.4;
 
-const vertexShader = /* glsl */ `
-  varying vec2 vLocal;
-  varying vec3 vNormal;
-  void main() {
-    vLocal = position.xy;
-    vNormal = normalMatrix * normal;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
+type KiteParts = ReturnType<typeof createKiteParts>;
 
-const fragmentShader = /* glsl */ `
-  uniform vec3 uMain;
-  uniform vec3 uSecond;
-  uniform float uLight;
-  varying vec2 vLocal;
-  varying vec3 vNormal;
-
-  float hash(vec2 p) {
-    p = fract(p * vec2(123.34, 456.21));
-    p += dot(p, p + 45.32);
-    return fract(p.x * p.y);
-  }
-
-  float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
-               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
-  }
-
-  void main() {
-    // Patang pattern: a small diamond near the top and the bottom tip in the second colour.
-    float inner = abs(vLocal.x) / 0.24 + abs(vLocal.y - 0.36) / 0.3;
-    float second = max(step(inner, 1.0), step(vLocal.y, -0.48));
-    vec3 col = mix(uMain, uSecond, second);
-    float paper = 0.93 + 0.07 * noise(vLocal * 38.0);
-    vec3 n = normalize(vNormal) * (gl_FrontFacing ? 1.0 : -1.0);
-    float shade = 0.8 + 0.2 * max(dot(n, normalize(vec3(0.3, 0.6, 1.0))), 0.0);
-    gl_FragColor = vec4(col * paper * shade * uLight, 1.0);
-    #include <colorspace_fragment>
-  }
-`;
-
-function sailGeometry() {
-  const tris = [TOP, LEFT, CENTRE, TOP, CENTRE, RIGHT, LEFT, BOTTOM, CENTRE, CENTRE, BOTTOM, RIGHT];
-  const g = new BufferGeometry();
-  g.setAttribute('position', new Float32BufferAttribute(tris.flat(), 3));
-  g.computeVertexNormals();
-  return g;
+function createKiteParts() {
+  return {
+    sail: createSailMaterial(),
+    tail: createSailMaterial(),
+    spar: createSparMaterial(),
+    sailGeometry: sailGeometry(),
+    sparGeometry: sparGeometry(),
+    tailGeometry: tailGeometry(),
+  };
 }
 
-function sparGeometry() {
-  const bow = new QuadraticBezierCurve3(
-    new Vector3(LEFT[0], LEFT[1], LEFT[2] + 0.01),
-    new Vector3(0, 0.3, 0.06),
-    new Vector3(RIGHT[0], RIGHT[1], RIGHT[2] + 0.01),
-  ).getPoints(16);
-  const points: number[] = [];
-  for (let i = 0; i < bow.length - 1; i++) points.push(...bow[i].toArray(), ...bow[i + 1].toArray());
-  points.push(TOP[0], TOP[1], 0.01, BOTTOM[0], BOTTOM[1], 0.01);
-  const g = new BufferGeometry();
-  g.setAttribute('position', new Float32BufferAttribute(points, 3));
-  return g;
-}
-
-function tailGeometry() {
-  const g = new BufferGeometry();
-  g.setAttribute('position', new Float32BufferAttribute([0, 0, 0, -0.16, -0.28, 0, 0.16, -0.28, 0], 3));
-  return g;
-}
-
-export function Kite() {
-  const group = useRef<Group>(null);
-  const tail = useRef<Group>(null);
-  const kiteId = useFlight((s) => s.kite);
-  const reduced = useMemo(prefersReducedMotion, []);
-
-  const parts = useMemo(() => {
-    const sail = new ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      side: DoubleSide,
-      uniforms: {
-        uMain: { value: new Color() },
-        uSecond: { value: new Color() },
-        uLight: { value: 1 },
-      },
-    });
-    return {
-      sail,
-      sailGeometry: sailGeometry(),
-      sparGeometry: sparGeometry(),
-      tailGeometry: tailGeometry(),
-      spar: new LineBasicMaterial({ color: '#5a3b22' }),
-      tail: new ShaderMaterial({
-        vertexShader,
-        fragmentShader,
-        side: DoubleSide,
-        uniforms: { uMain: { value: new Color() }, uSecond: { value: new Color() }, uLight: { value: 1 } },
-      }),
-    };
-  }, []);
-
+function useKiteParts(kiteId: 1 | 2 | 3, patch: boolean): KiteParts {
+  const parts = useMemo(createKiteParts, []);
   useEffect(() => {
     const k = kites[kiteId];
     parts.sail.uniforms.uMain.value.set(k.main);
     parts.sail.uniforms.uSecond.value.set(k.second);
+    parts.sail.uniforms.uPatch.value = patch ? 1 : 0;
     // The tail is a single colour: the second colour on both uniforms.
     parts.tail.uniforms.uMain.value.set(k.second);
     parts.tail.uniforms.uSecond.value.set(k.second);
-  }, [kiteId, parts]);
+  }, [kiteId, patch, parts]);
+  useEffect(() => () => Object.values(parts).forEach((p) => p.dispose()), [parts]);
+  return parts;
+}
 
-  useEffect(
-    () => () => {
-      Object.values(parts).forEach((p) => p.dispose());
-    },
-    [parts],
-  );
+function setLight(parts: KiteParts) {
+  const light = (1 - 0.45 * frame.sky.night) * (1 - 0.15 * frame.sky.overcast);
+  parts.sail.uniforms.uLight.value = light;
+  parts.tail.uniforms.uLight.value = light;
+}
 
-  useFrame((state) => {
-    const g = group.current;
-    if (!g) return;
-    const t = frame.time;
-    const amp = reduced ? 0.4 : 1;
-    const ampX = amp * Math.min(1, state.size.width / state.size.height + 0.2);
-    const altitude = useFlight.getState().altitude;
-    const lean = Math.min(1, Math.max(-1, frame.climbRate / 25));
-
-    frame.kiteAnchor.set(0, altitude * WORLD_PER_METRE, 0);
-    // A gust pushes the kite sideways and it leans into it; after a choice it drifts to that side.
-    const gust = frame.gust * amp * (0.9 + 0.35 * Math.sin(t * 1.7));
-    const push = Math.min(1, ampX + 0.2) * (gust + 1.3 * frame.drift);
-    g.position.set(
-      push + ampX * (0.45 * Math.sin(t * 0.5) + 0.15 * Math.sin(t * 1.3 + 0.7)),
-      frame.kiteAnchor.y + amp * 0.2 * Math.sin(t * 0.7 + 2),
-      0,
-    );
-    g.rotation.set(
-      -0.2 - 0.15 * lean + amp * 0.05 * Math.sin(t * 1.1),
-      amp * 0.15 * Math.sin(t * 0.6),
-      amp * (0.12 * Math.sin(t * 0.9) + 0.05 * Math.sin(t * 2.3 + 1)) - 0.28 * gust - 0.3 * frame.drift,
-    );
-    if (tail.current) tail.current.rotation.z = amp * 0.35 * Math.sin(t * 3.1);
-
-    const light = (1 - 0.45 * frame.sky.night) * (1 - 0.15 * frame.sky.overcast);
-    parts.sail.uniforms.uLight.value = light;
-    parts.tail.uniforms.uLight.value = light;
-
-    g.updateMatrixWorld();
-    frame.bridle.copy(BRIDLE).applyMatrix4(g.matrixWorld);
-  }, -2);
-
+function KiteMesh({ parts, group, tail }: { parts: KiteParts; group?: RefObject<Group>; tail?: RefObject<Group> }) {
   return (
     <group ref={group}>
       <mesh geometry={parts.sailGeometry} material={parts.sail} />
@@ -184,6 +67,108 @@ export function Kite() {
       <group ref={tail} position={[BOTTOM[0], BOTTOM[1] + 0.02, 0]}>
         <mesh geometry={parts.tailGeometry} material={parts.tail} />
       </group>
+    </group>
+  );
+}
+
+/** Wraps an angle to within half a turn of a reference, so a tumble settles the short way round. */
+const nearestAngle = (angle: number, ref: number) =>
+  ref + ((((angle - ref + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI;
+
+/** Mihir's kite: flies, leans into gusts, tumbles or drifts down in a cut, rests on the roof, relaunches. */
+export function Kite() {
+  const group = useRef<Group>(null);
+  const tail = useRef<Group>(null);
+  const kiteId = useFlight((s) => s.kite);
+  // The old kite shows its patch once the two kites sit side by side for Decision 4.
+  const patched = useFlight((s) => s.phase === 'cut' && s.cut?.id === 'slack' && s.cut.step >= 2);
+  const parts = useKiteParts(kiteId, patched);
+  const reduced = useMemo(prefersReducedMotion, []);
+  const pose = useMemo(() => ({ pos: new Vector3(), rot: new Euler(), rest: new Vector3() }), []);
+
+  useFrame((state) => {
+    const g = group.current;
+    if (!g) return;
+    const s = useFlight.getState();
+    const t = frame.time;
+    const amp = reduced ? 0.4 : 1;
+    const ampX = amp * Math.min(1, state.size.width / state.size.height + 0.2);
+    const lean = Math.min(1, Math.max(-1, frame.climbRate / 25));
+
+    frame.kiteAnchor.set(0, s.altitude * WORLD_PER_METRE, 0);
+
+    // Flying: sway, plus a gust that pushes the kite sideways and a drift toward the chosen side.
+    const gust = frame.gust * amp * (0.9 + 0.35 * Math.sin(t * 1.7));
+    const push = Math.min(1, ampX + 0.2) * (gust + 1.3 * frame.drift);
+    const { pos, rot, rest } = pose;
+    pos.set(
+      push + ampX * (0.45 * Math.sin(t * 0.5) + 0.15 * Math.sin(t * 1.3 + 0.7)),
+      frame.kiteAnchor.y + amp * 0.2 * Math.sin(t * 0.7 + 2),
+      0,
+    );
+    rot.set(
+      -0.2 - 0.15 * lean + amp * 0.05 * Math.sin(t * 1.1),
+      amp * 0.15 * Math.sin(t * 0.6),
+      amp * (0.12 * Math.sin(t * 0.9) + 0.05 * Math.sin(t * 2.3 + 1)) - 0.28 * gust - 0.3 * frame.drift,
+    );
+
+    // Falling: the snapped kite tumbles; the slack kite swings down like a leaf.
+    const c = frame.cutT;
+    if (c >= 0 && !reduced && s.cut) {
+      if (s.cut.id === 'snap' && c > SNAP.snap) {
+        const k = c - SNAP.snap;
+        rot.z += k * 7;
+        rot.x += Math.sin(k * 5) * 0.8;
+        pos.x += Math.sin(k * 1.7) * 0.8;
+      } else if (s.cut.id === 'slack') {
+        const k = smoothstep(SLACK.fallStart, SLACK.fallStart + 1, c);
+        pos.x += 1.6 * Math.sin(c * 1.3) * k;
+        rot.z += 0.6 * Math.sin(c * 1.3) * k;
+        rot.x += 0.3 * Math.sin(c * 0.9) * k;
+      }
+    }
+
+    // Resting on the roof, blended in as the kite lands and out as the new kite lifts.
+    const slack = s.cut?.id === 'slack';
+    const restX = slack ? (s.phase === 'relaunch' ? SIDE_X : -SIDE_X) : 0;
+    rest.set(restX, frame.kiteAnchor.y, REST_Z);
+    const L = frame.landed;
+    const spin = L > 0 ? nearestAngle(rot.z, REST_ROTATION.z) : rot.z;
+    g.position.lerpVectors(pos, rest, L);
+    g.rotation.set(
+      rot.x + (REST_ROTATION.x - rot.x) * L,
+      rot.y + (REST_ROTATION.y - rot.y) * L,
+      spin + (REST_ROTATION.z - spin) * L,
+    );
+    if (tail.current) tail.current.rotation.z = amp * 0.35 * Math.sin(t * 3.1) * (1 - L);
+
+    setLight(parts);
+    g.updateMatrixWorld();
+    frame.bridle.copy(BRIDLE).applyMatrix4(g.matrixWorld);
+  }, -2);
+
+  return <KiteMesh parts={parts} group={group} tail={tail} />;
+}
+
+/**
+ * The second kite on the rooftop at Decision 4. While the visitor decides,
+ * it is the new teal Kite 3 on the right. Once Kite 3 launches, the old
+ * patched Kite 2 stays behind on the left.
+ */
+export function RestingKite() {
+  const visible = useFlight(
+    (s) => s.cut?.id === 'slack' && ((s.phase === 'cut' && s.cut.step >= 2) || s.phase === 'relaunch'),
+  );
+  const relaunching = useFlight((s) => s.phase === 'relaunch');
+  const parts = useKiteParts(relaunching ? 2 : 3, relaunching);
+  const y = cutStop('slack').fallTo * WORLD_PER_METRE;
+
+  useFrame(() => setLight(parts));
+
+  if (!visible) return null;
+  return (
+    <group position={[relaunching ? -SIDE_X : SIDE_X, y, REST_Z]} rotation={REST_ROTATION}>
+      <KiteMesh parts={parts} />
     </group>
   );
 }

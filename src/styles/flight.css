@@ -205,3 +205,235 @@ html.is-flying body {
   white-space: nowrap;
   border: 0;
 }
+
+/* Cut sequence: each step rises in as a new card. */
+.cut-step {
+  animation: rise-in 500ms var(--ease-out) both;
+}
+
+.cut-step__action {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+/* "Kai po che!" as the rival kite crosses the string. */
+.shout-flight {
+  position: absolute;
+  left: 50%;
+  top: 14%;
+  margin: 0;
+  transform: translateX(-50%);
+  font-family: var(--font-head);
+  font-size: clamp(40px, 7vw, 72px);
+  font-style: italic;
+  font-weight: 600;
+  color: var(--ink);
+  text-shadow: 0 2px 18px rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: shout-in 400ms var(--ease-out) both;
+}
+
+@keyframes shout-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+/* Hold button: a 72 px circle whose ring fills over one second. */
+.hold {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+
+.hold__ring {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--kite);
+  transform: rotate(-90deg);
+}
+
+.hold__track,
+.hold__fill {
+  fill: none;
+  stroke-width: 5;
+}
+
+.hold__track {
+  stroke: rgba(255, 255, 255, 0.35);
+}
+
+.hold__fill {
+  stroke: var(--kite-on);
+  stroke-dasharray: var(--circumference);
+  stroke-dashoffset: var(--circumference);
+  transition: stroke-dashoffset 200ms ease-out;
+}
+
+.hold.is-holding .hold__fill {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1000ms linear;
+}
+
+.hold:focus-visible {
+  outline: none;
+}
+
+.hold:focus-visible .hold__ring {
+  outline: 3px solid var(--kite);
+  outline-offset: 4px;
+}
+
+/* Ending: lanterns first, then the comparison. */
+.ending__instruction {
+  margin-top: 8px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.lantern-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --rise: 56vh;
+}
+
+.hero-lantern {
+  position: absolute;
+  /* Anchored at the top so the lights stay level when goals of different lengths appear below them. */
+  top: 70%;
+  width: 150px;
+  margin-left: -75px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border: 0;
+  background: none;
+  color: var(--paper);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 3.5s var(--ease-out);
+  animation: lantern-bob 3s ease-in-out infinite;
+}
+
+.hero-lantern--1 {
+  left: 12%;
+}
+
+.hero-lantern--2 {
+  left: 26%;
+  animation-delay: -1s;
+}
+
+.hero-lantern--3 {
+  left: 40%;
+  animation-delay: -2s;
+}
+
+.hero-lantern.is-released {
+  transform: translateY(calc(-1 * var(--rise)));
+  cursor: default;
+  animation: none;
+}
+
+.hero-lantern:focus-visible {
+  outline: none;
+}
+
+.hero-lantern:focus-visible .hero-lantern__light {
+  outline: 3px solid var(--lantern-core, #ffb547);
+  outline-offset: 6px;
+}
+
+.hero-lantern__light {
+  width: 44px;
+  height: 58px;
+  border-radius: 40% 40% 30% 30%;
+  background: radial-gradient(circle at 50% 40%, #fff3d6 0%, #ffb547 45%, #ff8a3d 100%);
+  box-shadow:
+    0 0 28px 8px rgba(255, 138, 61, 0.6),
+    0 0 70px 22px rgba(255, 181, 71, 0.28);
+}
+
+.hero-lantern__text {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  text-shadow: 0 1px 8px rgba(13, 24, 48, 0.9);
+  animation: rise-in 800ms var(--ease-out) 600ms both;
+}
+
+@keyframes lantern-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@media (max-width: 768px) {
+  .lantern-field {
+    --rise: 22vh;
+  }
+
+  .hero-lantern {
+    top: 32%;
+    width: 104px;
+    margin-left: -52px;
+  }
+
+  .hero-lantern--1 {
+    left: 19%;
+  }
+
+  .hero-lantern--2 {
+    left: 50%;
+  }
+
+  .hero-lantern--3 {
+    left: 81%;
+  }
+
+  .hero-lantern__light {
+    width: 36px;
+    height: 48px;
+  }
+
+  .hero-lantern__text {
+    font-size: 14px;
+  }
+
+  /* Leave the released lanterns and their goals visible above the panel. */
+  .beat.beat--ending {
+    max-height: 56vh;
+    max-height: 56dvh;
+  }
+
+  .shout-flight {
+    top: 10%;
+  }
+}

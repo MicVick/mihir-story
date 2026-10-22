@@ -11,6 +11,9 @@ import {
 } from 'three';
 import { isSmallScreen } from '../lib/device';
 import { frame } from './frame';
+import { LANDING_TOP } from './Rooftops';
+import { smoothstep } from './skyMath';
+import { seeded, wrap } from './wrap';
 
 interface Layer {
   z: number;
@@ -39,14 +42,6 @@ interface Cloud {
   scale: number;
 }
 
-function seeded(seed: number) {
-  let s = seed;
-  return () => {
-    s = (s * 16807) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
-}
-
 function makeCloudTexture(seed: number): CanvasTexture {
   const rand = seeded(seed);
   const canvas = document.createElement('canvas');
@@ -70,10 +65,6 @@ function makeCloudTexture(seed: number): CanvasTexture {
   texture.colorSpace = SRGBColorSpace;
   return texture;
 }
-
-/** Wraps v into [center - half, center + half). */
-const wrap = (v: number, center: number, half: number) =>
-  center + ((((v - center + half) % (2 * half)) + 2 * half) % (2 * half)) - half;
 
 const WHITE = new Color('#ffffff');
 const GREY = new Color('#9aa1aa');
@@ -128,7 +119,7 @@ export function Clouds() {
     tint
       .copy(WHITE)
       .lerp(sky.horizon, 0.25)
-      .lerp(GREY, sky.overcast * 0.7)
+      .lerp(GREY, Math.max(sky.overcast * 0.7, frame.desat * 0.6))
       .multiplyScalar(1 - 0.7 * sky.night);
 
     clouds.forEach((cloud, i) => {
@@ -138,14 +129,14 @@ export function Clouds() {
       const halfH = dist * tanHalf + cloud.scale * 0.5;
       const halfW = dist * tanHalf * aspect + cloud.scale;
       cloud.x += cloud.speed * dt;
-      mesh.position.set(
-        wrap(cloud.x, camera.position.x, halfW),
-        wrap(cloud.y, camera.position.y, halfH * 1.2),
-        cloud.layer.z,
-      );
+      const y = wrap(cloud.y, camera.position.y, halfH * 1.2);
+      mesh.position.set(wrap(cloud.x, camera.position.x, halfW), y, cloud.layer.z);
       const material = materials[i];
       material.color.copy(tint);
-      material.opacity = cloud.opacity * (cloud.extra ? sky.overcast : 0.8 + 0.2 * sky.overcast);
+      const cover = Math.max(sky.overcast, frame.desat);
+      // No clouds down among the houses.
+      const aboveRoofs = smoothstep(LANDING_TOP + 2, LANDING_TOP + 9, y);
+      material.opacity = cloud.opacity * (cloud.extra ? cover : 0.8 + 0.2 * cover) * aboveRoofs;
     });
   });
 

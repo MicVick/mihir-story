@@ -18,6 +18,7 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uMoon;
   uniform float uStars;
   uniform float uOvercast;
+  uniform float uDesat;
   uniform float uAspect;
   uniform float uTime;
   varying vec2 vUv;
@@ -34,7 +35,7 @@ const fragmentShader = /* glsl */ `
 
     // Sun: soft glow and a disc, dimmed under cloud cover.
     float sunDist = length((vUv - uSun.xy) * aspect);
-    float sunVis = uSun.z * (1.0 - 0.97 * uOvercast);
+    float sunVis = uSun.z * (1.0 - 0.97 * uOvercast) * (1.0 - uDesat);
     vec3 sunCol = vec3(1.0, 0.93, 0.78);
     col += sunCol * exp(-sunDist * 5.0) * 0.35 * sunVis;
     col = mix(col, sunCol, smoothstep(0.052, 0.046, sunDist) * sunVis);
@@ -53,6 +54,9 @@ const fragmentShader = /* glsl */ `
     float moonDist = length((vUv - uMoon.xy) * aspect);
     col += vec3(0.85, 0.88, 1.0) * exp(-moonDist * 9.0) * 0.2 * uMoon.z;
     col = mix(col, vec3(0.96, 0.95, 0.9), smoothstep(0.036, 0.031, moonDist) * uMoon.z);
+
+    // Colour drains from the sky during a cut.
+    col = mix(col, vec3(dot(col, vec3(0.299, 0.587, 0.114))), uDesat * 0.75);
 
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
@@ -79,6 +83,7 @@ export function Sky() {
           uMoon: { value: new Vector3(0.78, 0.8, 0) },
           uStars: { value: 0 },
           uOvercast: { value: 0 },
+          uDesat: { value: 0 },
           uAspect: { value: 1 },
           uTime: { value: 0 },
         },
@@ -95,6 +100,7 @@ export function Sky() {
     u.uMoon.value.z = sky.night;
     u.uStars.value = sky.night;
     u.uOvercast.value = sky.overcast;
+    u.uDesat.value = frame.desat;
     u.uAspect.value = size.width / size.height;
     u.uTime.value = frame.time;
   });
