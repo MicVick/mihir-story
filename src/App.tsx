@@ -1,7 +1,22 @@
+import { lazy, Suspense, useEffect } from 'react';
+import { intro } from './content/story';
+import { useFlight } from './state/store';
 import { StoryMode } from './ui/StoryMode';
 
-// Phase 1: story mode only. The 3D flight arrives in Phase 2 and will render
-// here when mode is 'flight' and WebGL is available, with StoryMode as the fallback.
+// Three.js loads only for visitors who fly, so story mode stays light.
+const Flight = lazy(() => import('./ui/Flight'));
+
 export function App() {
-  return <StoryMode />;
+  const mode = useFlight((s) => s.mode);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [mode]);
+
+  if (mode === 'story') return <StoryMode />;
+  return (
+    <Suspense fallback={<p className="loader">{intro.loader}</p>}>
+      <Flight />
+    </Suspense>
+  );
 }

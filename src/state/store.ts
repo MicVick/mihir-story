@@ -1,5 +1,7 @@
 import { create } from 'zustand';
+import { chapterAt, MAX_ALTITUDE } from '../content/beats';
 import type { Choice, KiteId } from '../content/story';
+import { initialMode } from '../lib/device';
 
 export type Phase = 'intro' | 'flying' | 'deciding' | 'revealing' | 'cut' | 'relaunch' | 'ending';
 
@@ -14,9 +16,15 @@ export interface FlightState {
   sound: boolean;
   mode: 'flight' | 'story';
   presenter: boolean;
+  /** Highest altitude the visitor may climb to right now. Decisions lower it. */
+  ceiling: number;
 }
 
 interface FlightActions {
+  /** Moves the target altitude by a raw input delta in metres. */
+  nudge: (metres: number) => void;
+  /** Called every frame with the damped altitude. */
+  setAltitude: (altitude: number) => void;
   /** Records a choice. A decision cannot be changed once made. */
   choose: (decisionId: string, choice: Choice) => void;
   markVisited: (chapterIndex: number) => void;
@@ -73,13 +81,31 @@ const initial: FlightState = {
   sound: false,
   mode: 'flight',
   presenter: false,
+  ceiling: MAX_ALTITUDE,
 };
+
+const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
 export const useFlight = create<FlightState & FlightActions>()((set, get) => ({
   ...initial,
   ...loadSaved(),
   presenter: presenterFromUrl(),
+  mode: initialMode(),
 
+  nudge: (metres) =>
+    set((s) => ({
+      phase: s.phase === 'intro' && metres > 0 ? 'flying' : s.phase,
+      targetAltitude: clamp(s.targetAltitude + metres, 0, s.ceiling),
+    })),
+  setAltitude: (altitude) => {
+    const chapterIndex = chapterAt(altitude);
+    const { visited } = get();
+    set({
+      altitude,
+      chapterIndex,
+      visited: visited.includes(chapterIndex) ? visited : [...visited, chapterIndex].sort((a, b) => a - b),
+    });
+  },
   choose: (decisionId, choice) => {
     if (get().choices[decisionId]) return;
     set((s) => ({ choices: { ...s.choices, [decisionId]: choice } }));
