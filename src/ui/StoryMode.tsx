@@ -1,11 +1,10 @@
 import type { CSSProperties } from 'react';
 import { kites, skies } from '../content/palette';
 import { chapters, ending, intro, ui, type Chapter } from '../content/story';
-import { compareChoices } from '../state/compare';
 import { useFlight } from '../state/store';
 import { Chips } from './Chips';
-import { Comparison } from './Comparison';
 import { DecisionPanel } from './DecisionPanel';
+import { EndingActions, EndingComparison } from './Ending';
 import { RevealCard } from './RevealCard';
 import { StoryCard } from './StoryCard';
 
@@ -108,15 +107,6 @@ function StoryDecision({ chapter }: { chapter: Chapter }) {
 }
 
 function StoryEnding({ tone }: { tone: 'light' | 'dark' }) {
-  const choices = useFlight((s) => s.choices);
-  const resetFlight = useFlight((s) => s.resetFlight);
-  const comparison = compareChoices(choices);
-
-  const flyAgain = () => {
-    resetFlight();
-    window.scrollTo({ top: 0 });
-  };
-
   return (
     <>
       <p className={`card card--${tone} ending__intro`}>{ending.intro}</p>
@@ -131,26 +121,12 @@ function StoryEnding({ tone }: { tone: 'light' | 'dark' }) {
       </ul>
 
       <div aria-live="polite" className="live">
-        {comparison.complete ? (
-          <Comparison comparison={comparison} tone={tone} />
-        ) : (
-          <p className={`card card--${tone} comparison__locked`}>{ui.comparisonLocked}</p>
-        )}
+        <EndingComparison tone={tone} />
       </div>
 
       <p className="closing">{ending.closing}</p>
 
-      <div className="actions">
-        <button type="button" className="action" onClick={flyAgain}>
-          {ending.buttons.flyAgain}
-        </button>
-        <a className="action" href={`mailto:${ending.contact.email}`}>
-          {ending.buttons.email}
-        </a>
-        <a className="action" href={ending.contact.linkedin} target="_blank" rel="noopener noreferrer">
-          {ending.buttons.linkedin}
-        </a>
-      </div>
+      <EndingActions inStory />
     </>
   );
 }

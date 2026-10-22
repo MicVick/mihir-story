@@ -154,15 +154,18 @@ export function Kite() {
     const lean = Math.min(1, Math.max(-1, frame.climbRate / 25));
 
     frame.kiteAnchor.set(0, altitude * WORLD_PER_METRE, 0);
+    // A gust pushes the kite sideways and it leans into it; after a choice it drifts to that side.
+    const gust = frame.gust * amp * (0.9 + 0.35 * Math.sin(t * 1.7));
+    const push = Math.min(1, ampX + 0.2) * (gust + 1.3 * frame.drift);
     g.position.set(
-      ampX * (0.45 * Math.sin(t * 0.5) + 0.15 * Math.sin(t * 1.3 + 0.7)),
+      push + ampX * (0.45 * Math.sin(t * 0.5) + 0.15 * Math.sin(t * 1.3 + 0.7)),
       frame.kiteAnchor.y + amp * 0.2 * Math.sin(t * 0.7 + 2),
       0,
     );
     g.rotation.set(
       -0.2 - 0.15 * lean + amp * 0.05 * Math.sin(t * 1.1),
       amp * 0.15 * Math.sin(t * 0.6),
-      amp * (0.12 * Math.sin(t * 0.9) + 0.05 * Math.sin(t * 2.3 + 1)),
+      amp * (0.12 * Math.sin(t * 0.9) + 0.05 * Math.sin(t * 2.3 + 1)) - 0.28 * gust - 0.3 * frame.drift,
     );
     if (tail.current) tail.current.rotation.z = amp * 0.35 * Math.sin(t * 3.1);
 

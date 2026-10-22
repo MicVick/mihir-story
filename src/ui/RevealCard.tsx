@@ -5,9 +5,11 @@ interface Props {
   decision: Decision;
   tone: CardTone;
   chosen: Choice;
+  /** Flight mode only: shows "Continue" and takes focus so keyboard users can move on. */
+  onContinue?: () => void;
 }
 
-export function RevealCard({ decision, tone, chosen }: Props) {
+export function RevealCard({ decision, tone, chosen, onContinue }: Props) {
   return (
     <article className={`card card--${tone} reveal`}>
       <div className="badges">
@@ -20,6 +22,11 @@ export function RevealCard({ decision, tone, chosen }: Props) {
       </div>
       <p className="card__body">{decision.reveal}</p>
       {decision.result && <p className="stat">{decision.result}</p>}
+      {onContinue && (
+        <button type="button" className="continue" onClick={onContinue} autoFocus>
+          {ui.continue}
+        </button>
+      )}
     </article>
   );
 }

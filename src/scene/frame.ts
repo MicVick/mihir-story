@@ -12,6 +12,10 @@ export const frame = {
   /** Damped climb rate in metres per second. */
   climbRate: 0,
   sky: createSkySample(),
+  /** 0 to 1. The wind gust while a decision is open. */
+  gust: 0,
+  /** -1 to 1. Brief drift toward the chosen side after a choice (A left, B right). */
+  drift: 0,
   /** Kite position before sway, used by the camera. */
   kiteAnchor: new Vector3(),
   /** World position where the string meets the kite. */

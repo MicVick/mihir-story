@@ -69,7 +69,63 @@ html.is-flying body {
     visibility 0s;
 }
 
+/* The ending is taller than a story card: let it use the screen height and scroll if needed. */
+.beat.beat--ending {
+  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ending {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ending .ending__intro {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.ending .comparison__table {
+  font-size: 14px;
+}
+
+.ending .comparison__table th,
+.ending .comparison__table td {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.ending .closing {
+  font-size: calc(var(--body-size) + 3px);
+  margin: 8px 0 4px;
+}
+
+/* The ending is a summary panel, wider than a story card so the table rows stay short. */
+@media (min-width: 769px) {
+  .beats:has(.beat--ending.is-active) {
+    width: min(560px, 46vw);
+  }
+}
+
 @media (max-width: 768px) {
+  .beat.beat--ending {
+    max-height: calc(100dvh - 32px - env(safe-area-inset-top));
+  }
+
+  /* Both options must be fully visible, so an open decision may use more of the screen. */
+  .beat.beat--decision {
+    max-height: 66vh;
+    max-height: 66dvh;
+  }
+
+  .beat--decision .decision__prompt {
+    font-size: calc(var(--body-size) + 1px);
+    margin-bottom: 14px;
+  }
+
   .beats {
     top: auto;
     left: var(--gutter);

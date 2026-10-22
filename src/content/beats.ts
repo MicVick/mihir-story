@@ -3,7 +3,7 @@
 // chapter's. The band is split evenly between the chapter's beats, so one
 // card is on screen at a time.
 
-import { chapters, type Chapter, type Decision, type StoryCard } from './story';
+import { chapters, type Chapter, type Choice, type Decision, type StoryCard } from './story';
 
 export const MAX_ALTITUDE = 900;
 
@@ -64,4 +64,17 @@ export function chapterAt(altitude: number): number {
     if (altitude >= chapters[i].altitude) return i;
   }
   return 0;
+}
+
+/** Altitude where the ending (night and lanterns) begins. */
+export const ENDING_ALTITUDE = chapters[chapters.length - 1].altitude;
+
+/** Where the climb locks for each decision: just inside the decision's band, once its card is up. */
+export const decisionLocks = beats.flatMap((b) =>
+  b.kind === 'decision' ? [{ id: b.decision.id, altitude: b.start + Math.min(12, (b.end - b.start) * 0.25) }] : [],
+);
+
+/** The highest altitude allowed: the lock of the first decision not yet made. */
+export function ceilingFor(choices: Record<string, Choice>): number {
+  return decisionLocks.find((lock) => !choices[lock.id])?.altitude ?? MAX_ALTITUDE;
 }

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { chapterAt, MAX_ALTITUDE } from '../content/beats';
+import { ceilingFor, chapterAt, ENDING_ALTITUDE, MAX_ALTITUDE } from '../content/beats';
 import type { Choice, KiteId } from '../content/story';
 import { initialMode } from '../lib/device';
 
@@ -18,6 +18,8 @@ export interface FlightState {
   presenter: boolean;
   /** Highest altitude the visitor may climb to right now. Decisions lower it. */
   ceiling: number;
+  /** The most recent choice in flight mode, for the reveal drift. */
+  lastChoice: { side: Choice; at: number } | null;
 }
 
 interface FlightActions {
@@ -27,6 +29,8 @@ interface FlightActions {
   setAltitude: (altitude: number) => void;
   /** Records a choice. A decision cannot be changed once made. */
   choose: (decisionId: string, choice: Choice) => void;
+  /** Leaves the reveal and unlocks the climb ("Continue"). */
+  continueFlight: () => void;
   markVisited: (chapterIndex: number) => void;
   setMode: (mode: FlightState['mode']) => void;
   setSound: (on: boolean) => void;
@@ -36,6 +40,10 @@ interface FlightActions {
 }
 
 const STORAGE_KEY = 'kite-story:v1';
+/** The reveal stays on screen at least this long before a climb input moves on. */
+export const REVEAL_HOLD_MS = 1500;
+/** How far "Continue" lifts the kite, so the move is visible. */
+const CONTINUE_METRES = 15;
 
 type Saved = Pick<FlightState, 'choices' | 'visited'>;
 
@@ -82,34 +90,64 @@ const initial: FlightState = {
   mode: 'flight',
   presenter: false,
   ceiling: MAX_ALTITUDE,
+  lastChoice: null,
 };
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
+/** Phase implied by altitude while the visitor is in control of the climb. */
+function phaseAt(altitude: number, ceiling: number): Phase {
+  if (altitude >= ENDING_ALTITUDE) return 'ending';
+  if (ceiling < MAX_ALTITUDE && altitude >= ceiling - 0.5) return 'deciding';
+  return 'flying';
+}
+
+const saved = loadSaved();
+
 export const useFlight = create<FlightState & FlightActions>()((set, get) => ({
   ...initial,
-  ...loadSaved(),
+  ...saved,
+  ceiling: ceilingFor(saved?.choices ?? {}),
   presenter: presenterFromUrl(),
   mode: initialMode(),
 
   nudge: (metres) =>
-    set((s) => ({
-      phase: s.phase === 'intro' && metres > 0 ? 'flying' : s.phase,
-      targetAltitude: clamp(s.targetAltitude + metres, 0, s.ceiling),
-    })),
+    set((s) => {
+      let phase = s.phase;
+      if (phase === 'revealing') {
+        // Hold the reveal briefly so it is read, then any input moves on.
+        if (performance.now() - (s.lastChoice?.at ?? 0) < REVEAL_HOLD_MS) return {};
+        phase = 'flying';
+      }
+      if (phase === 'intro' && metres > 0) phase = 'flying';
+      return { phase, targetAltitude: clamp(s.targetAltitude + metres, 0, s.ceiling) };
+    }),
   setAltitude: (altitude) => {
+    const s = get();
     const chapterIndex = chapterAt(altitude);
-    const { visited } = get();
+    const steering = s.phase === 'flying' || s.phase === 'deciding' || s.phase === 'ending';
     set({
       altitude,
       chapterIndex,
-      visited: visited.includes(chapterIndex) ? visited : [...visited, chapterIndex].sort((a, b) => a - b),
+      phase: steering ? phaseAt(altitude, s.ceiling) : s.phase,
+      visited: s.visited.includes(chapterIndex) ? s.visited : [...s.visited, chapterIndex].sort((a, b) => a - b),
     });
   },
   choose: (decisionId, choice) => {
-    if (get().choices[decisionId]) return;
-    set((s) => ({ choices: { ...s.choices, [decisionId]: choice } }));
+    const s = get();
+    if (s.choices[decisionId]) return;
+    const choices = { ...s.choices, [decisionId]: choice };
+    set({
+      choices,
+      ceiling: ceilingFor(choices),
+      ...(s.mode === 'flight' && { phase: 'revealing' as const, lastChoice: { side: choice, at: performance.now() } }),
+    });
   },
+  continueFlight: () =>
+    set((s) => ({
+      phase: 'flying',
+      targetAltitude: clamp(s.targetAltitude + CONTINUE_METRES, 0, s.ceiling),
+    })),
   markVisited: (chapterIndex) => {
     if (get().visited.includes(chapterIndex)) return;
     set((s) => ({ visited: [...s.visited, chapterIndex].sort((a, b) => a - b) }));
@@ -126,6 +164,8 @@ export const useFlight = create<FlightState & FlightActions>()((set, get) => ({
       kite: 1,
       choices: {},
       visited: [0],
+      ceiling: ceilingFor({}),
+      lastChoice: null,
     }),
 }));
 

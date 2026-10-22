@@ -339,3 +339,15 @@
   border-color: var(--kite);
   color: var(--kite-on);
 }
+
+.continue {
+  margin-top: 16px;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--kite);
+  color: var(--kite-on);
+  font-weight: 600;
+  cursor: pointer;
+}

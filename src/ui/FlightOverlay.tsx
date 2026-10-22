@@ -1,9 +1,13 @@
 import type { CSSProperties } from 'react';
 import { beatIndexAt, beats, type Beat } from '../content/beats';
 import { kites, skies } from '../content/palette';
-import { chapters, intro } from '../content/story';
+import { chapters, ending, intro, ui, type Choice } from '../content/story';
+import { compareChoices } from '../state/compare';
 import { useFlight } from '../state/store';
 import { Chips } from './Chips';
+import { DecisionPanel } from './DecisionPanel';
+import { Ending } from './Ending';
+import { RevealCard } from './RevealCard';
 import { StoryCard } from './StoryCard';
 
 /**
@@ -12,6 +16,7 @@ import { StoryCard } from './StoryCard';
  */
 export function FlightOverlay() {
   const active = useFlight((s) => beatIndexAt(s.altitude));
+  const choices = useFlight((s) => s.choices);
 
   return (
     <>
@@ -21,7 +26,7 @@ export function FlightOverlay() {
         ))}
       </div>
       <p className="sr-only" aria-live="polite">
-        {liveText(beats[active])}
+        {liveText(beats[active], choices)}
       </p>
     </>
   );
@@ -55,11 +60,34 @@ function renderBeat(beat: Beat, tone: 'light' | 'dark') {
       return <StoryCard card={beat.card} tone={tone} />;
     case 'chips':
       return <Chips chips={beat.chips} tone={tone} title={beat.title} />;
-    // Decisions arrive in Phase 3, the lantern ending in Phases 3 and 4.
     case 'decision':
+      return <FlightDecision beat={beat} tone={tone} />;
     case 'ending':
-      return null;
+      return <Ending tone={tone} />;
   }
+}
+
+/** The open decision, or its reveal once chosen. Descending re-shows the reveal; a choice never changes. */
+function FlightDecision({ beat, tone }: { beat: Extract<Beat, { kind: 'decision' }>; tone: 'light' | 'dark' }) {
+  const { decision } = beat;
+  const chosen = useFlight((s) => s.choices[decision.id]);
+  const revealing = useFlight((s) => s.phase === 'revealing');
+  const choose = useFlight((s) => s.choose);
+  const continueFlight = useFlight((s) => s.continueFlight);
+
+  if (!chosen) {
+    return (
+      <DecisionPanel decision={decision} tone={tone} onChoose={(choice) => choose(decision.id, choice)} />
+    );
+  }
+  return (
+    <RevealCard
+      decision={decision}
+      tone={tone}
+      chosen={chosen}
+      onContinue={revealing ? continueFlight : undefined}
+    />
+  );
 }
 
 function Hero() {
@@ -82,7 +110,7 @@ function Hero() {
   );
 }
 
-function liveText(beat: Beat): string {
+function liveText(beat: Beat, choices: Record<string, Choice>): string {
   switch (beat.kind) {
     case 'hero':
       return `${intro.heroTitle}. ${intro.heroSubtitle}`;
@@ -90,7 +118,18 @@ function liveText(beat: Beat): string {
       return [beat.card.title, beat.card.body, beat.card.stat].filter(Boolean).join(' ');
     case 'chips':
       return [beat.title, ...beat.chips.map((c) => c.body)].filter(Boolean).join(' ');
-    default:
-      return '';
+    case 'decision': {
+      const { decision } = beat;
+      const chosen = choices[decision.id];
+      if (!chosen) {
+        const { A, B } = decision.options;
+        return `${ui.windLabel} ${decision.prompt} ${A.label}. ${B.label}.`;
+      }
+      return `${ui.youChose}: ${decision.options[chosen].label}. ${ui.iChose}: ${decision.options[decision.mihir].label}. ${decision.reveal}`;
+    }
+    case 'ending': {
+      const comparison = compareChoices(choices);
+      return comparison.complete ? `${ending.intro} ${comparison.heading} ${comparison.note}` : ending.intro;
+    }
   }
 }

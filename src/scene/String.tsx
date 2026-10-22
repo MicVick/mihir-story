@@ -67,6 +67,10 @@ export function KiteString() {
     const sag = hand.distanceTo(kite) * 0.09 * (1 - 0.75 * scratch.tension);
     mid1.lerpVectors(hand, kite, 0.35).y -= sag;
     mid2.lerpVectors(hand, kite, 0.7).y -= sag * 0.6;
+    // A gust bows the string sideways.
+    const bend = hand.distanceTo(kite) * 0.1 * frame.gust * (1 + 0.2 * Math.sin(frame.time * 1.3));
+    mid1.x += bend;
+    mid2.x += bend * 0.7;
 
     const attr = geometry.getAttribute('position') as BufferAttribute;
     const arr = attr.array as Float32Array;

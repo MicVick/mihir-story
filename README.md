@@ -19,6 +19,9 @@ Add `?story` to the URL to open story mode directly. Story mode also loads on it
 | --- | --- | --- |
 | Climb | Mouse wheel, trackpad, Space, Arrow Up | Swipe up |
 | Descend | Arrow Down, scroll up | Swipe down |
+| Choose | Click a choice, or Tab then Enter | Tap a choice |
+
+The climb locks at each of the five decisions until a choice is made. A choice cannot be changed; descending re-shows its reveal.
 
 ## Where things live
 
@@ -37,7 +40,7 @@ Add `?story` to the URL to open story mode directly. Story mode also loads on it
 
 - [x] Phase 1: project, content and story mode
 - [x] Phase 2: sky, kite and flight
-- [ ] Phase 3: decisions and ending
+- [x] Phase 3: decisions and ending
 - [ ] Phase 4: cuts, kites and lanterns
 - [ ] Phase 5: opening, sound, photos and presenter mode
 - [ ] Phase 6: QA and deploy

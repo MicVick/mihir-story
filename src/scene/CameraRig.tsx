@@ -17,7 +17,9 @@ export function CameraRig() {
 
   useFrame((state, delta) => {
     const camera = state.camera as PerspectiveCamera;
-    const halfH = DISTANCE * Math.tan((camera.fov * Math.PI) / 360);
+    // Pull back a little at decisions to show the gust and the bent string.
+    const distance = DISTANCE + 2.5 * frame.gust;
+    const halfH = distance * Math.tan((camera.fov * Math.PI) / 360);
     const halfW = halfH * (state.size.width / state.size.height);
     const mobile = state.size.width <= MOBILE_MAX_WIDTH;
 
@@ -27,13 +29,13 @@ export function CameraRig() {
 
     // First frame, or a jump far enough that easing would lose the kite.
     if (!ready.current || Math.abs(ty - camera.position.y) > halfH * 3) {
-      camera.position.set(tx, ty, DISTANCE);
+      camera.position.set(tx, ty, distance);
       ready.current = true;
     } else {
       const k = 1 - Math.exp(-Math.min(delta, 0.1) * 2.5);
       camera.position.x += (tx - camera.position.x) * k;
       camera.position.y += (ty - camera.position.y) * k;
-      camera.position.z = DISTANCE;
+      camera.position.z = distance;
     }
   }, -1);
 
