@@ -1,6 +1,7 @@
 // ALL on-screen copy and chapter data lives in this file.
-// Components never hardcode copy. Rules: simple, professional language,
-// no em dashes, numbers exactly as written in SPEC.md Section 3.
+// Components never hardcode copy. Rules: plain, spoken language (write it the
+// way Mihir would say it), no em or en dashes, numbers exactly as written in
+// SPEC.md Section 3.
 // Lines marked [CONFIRM] are drafts Mihir will check before launch.
 
 import type { SkyKey } from './palette';
@@ -51,7 +52,7 @@ export interface Chapter {
 
 export const meta = {
   title: 'Mihir Gandhi | The Kite',
-  description: 'An interactive story told in one kite flight over Vadodara.',
+  description: 'My story, told as one kite flight over Vadodara on Uttarayan.',
 };
 
 export const intro = {
@@ -59,13 +60,13 @@ export const intro = {
   gujarati: 'ઉત્તરાયણ',
   gujaratiLatin: '(Uttarayan)',
   heroTitle: 'Mihir Gandhi',
-  heroSubtitle: 'One flight. Five decisions. Two cut kites.',
+  heroSubtitle: "Take my kite up. On the way, you'll face the five calls I had to make.",
   launch: 'Hold to launch',
   readStory: 'Read the story instead',
-  hint: 'Scroll or swipe up to fly higher.',
-  reducedMotion: 'Your device asks for reduced motion. The story also reads well as a page.',
-  reducedMotionRead: 'Read the story',
-  reducedMotionStay: 'Keep flying',
+  hint: 'Scroll or swipe up to let out more string.',
+  reducedMotion: 'Your device is set to reduce motion. You can read all of this as a normal page instead.',
+  reducedMotionRead: 'Read it as a page',
+  reducedMotionStay: 'Fly anyway',
 };
 
 export const menu = {
@@ -91,7 +92,7 @@ export const ui = {
   rivalShout: 'Kai po che!',
   retie: 'Re-tie the string',
   continue: 'Continue',
-  comparisonLocked: 'Make all five choices above to see how your flight compares with mine.',
+  comparisonLocked: 'Make all five calls to see how your flight compares with mine.',
   tableDecision: 'Decision',
   tableYours: 'Your choice',
   tableMine: 'My choice',
@@ -108,7 +109,7 @@ export const chapters: Chapter[] = [
     cards: [
       {
         id: 'terrace',
-        body: 'Every January, Vadodara moves to its rooftops. This is where I grew up, studying at Bright School and spending Uttarayan on the terrace with my family. My father ran a small business in the city.',
+        body: 'I grew up in Vadodara and went to Bright School. Every Uttarayan, the whole city goes up to its roofs, and my family spent the day on this terrace. My father ran a small business in town.',
         stat: 'Class X: 92.5%, top 0.36% in the state.',
         // Photo slot: childhood or family. Add public/photos/terrace.webp to show it.
         photo: 'terrace.webp',
@@ -127,14 +128,14 @@ export const chapters: Chapter[] = [
     decision: {
       id: 'kota',
       name: 'Leaving home at 16',
-      prompt: 'You are 16. Your teachers know you well and have promised to take the best care of you if you stay. Or you can move alone to Kota, where you know no one and everything is unknown.',
+      prompt: "You're 16. Your teachers at home know you well, and they've promised to look after you if you stay. Or you can move to Kota on your own, where you don't know a single person.",
       options: {
-        A: { label: 'Stay home', sub: 'Familiar teachers, family, comfort.' },
+        A: { label: 'Stay home', sub: 'Teachers you know, family, comfort.' },
         B: { label: 'Go to Kota', sub: 'A new city, on your own.' },
       },
       mihir: 'B',
       // [CONFIRM]
-      reveal: 'I chose Kota. Staying was the comfortable option, and I wanted to find out how far I could go without it.',
+      reveal: "I went to Kota. Staying would have been easier, and I think that's exactly why I didn't. I wanted to see what I could manage on my own.",
       result: 'Class XII: 95.8%, rank 5 of 171. KVPY Fellowship, All India Rank 191. JEE Mains: 99.64 percentile.',
     },
   },
@@ -149,14 +150,14 @@ export const chapters: Chapter[] = [
     decision: {
       id: 'branch',
       name: 'IIT or NIT Surat CSE',
-      prompt: 'Your rank opens two doors. Civil or Mechanical Engineering at IIT Delhi or IIT Bombay. Or Computer Science at NIT Surat.',
+      prompt: 'With your rank, you can get Civil or Mechanical Engineering at IIT Delhi or IIT Bombay. Or you can get Computer Science at NIT Surat.',
       options: {
-        A: { label: 'IIT, Civil or Mechanical', sub: 'A top IIT on your degree.' },
-        B: { label: 'NIT Surat, Computer Science', sub: 'The branch you want to study.' },
+        A: { label: 'IIT, Civil or Mechanical', sub: 'The IIT name on your degree.' },
+        B: { label: 'NIT Surat, Computer Science', sub: 'The subject you actually want.' },
       },
       mihir: 'B',
       // [CONFIRM]
-      reveal: 'I chose Computer Science at NIT Surat. I wanted to build with technology, and the subject mattered more to me than the name on the gate.',
+      reveal: "I took Computer Science at NIT Surat. I wanted to build things with software, and I didn't want to spend four years on a subject I'd only picked for the IIT name.",
     },
   },
   {
@@ -172,11 +173,11 @@ export const chapters: Chapter[] = [
     cards: [
       {
         id: 'cut-1',
-        body: "At 19, I lost my father to COVID-19. Restrictions meant our relatives could not come to help. Overnight, I was managing the family's finances, taxes and my father's business, and looking after my mother and two younger brothers, while still in college.",
+        body: "I was 19 when my father died of COVID-19. Because of the restrictions, none of our relatives could come and help. Almost overnight I was handling the family's money, the taxes and his business, and looking after my mother and my two younger brothers. I was still in college.",
       },
       {
         id: 'cut-2',
-        body: 'It taught me to stay calm under pressure and to be grateful for what I have. It also gave me a reason. I had seen what the pandemic did to small businesses like his.',
+        body: "Those months taught me to stay calm when things go wrong, and to be grateful for what I still had. I'd also seen up close what the pandemic did to small businesses like his. I couldn't stop thinking about that.",
       },
     ],
   },
@@ -190,14 +191,14 @@ export const chapters: Chapter[] = [
     cards: [
       {
         id: 'nexus',
-        body: "After COVID, campus came back without its culture. Seniors and juniors barely met. With a few classmates, I convinced the HoD and professors to start Nexus, the Computer Science department's official club: hackathons, seminars, sports and cultural events. Engagement grew 200% in a year.",
+        body: 'When college reopened after COVID, it felt empty. Seniors and juniors hardly knew each other. A few classmates and I went to the HoD and our professors and talked them into starting Nexus, an official club for the Computer Science department. We ran hackathons, seminars, sports and cultural events, and engagement grew 200% in a year.',
         // Photo slot: NIT Surat or the WictroniX team. Add public/photos/building.webp to show it.
         photo: 'building.webp',
         photoAlt: 'Mihir with his team at NIT Surat', // [CONFIRM]
       },
       {
         id: 'wictronix',
-        body: 'In 2022, I co-founded WictroniX to help small businesses adopt technology and digital tools. It became a DPIIT-recognised startup with 50 clients across 8 industries and 3 countries, and ₹40 lakh in revenue.',
+        body: 'In 2022 I co-founded WictroniX to help small businesses, like the one my father ran, start using technology and digital tools. We were recognised by DPIIT as a startup, and we got to 50 clients in 8 industries and 3 countries, with ₹40 lakh in revenue.',
       },
     ],
     chips: [
@@ -216,13 +217,13 @@ export const chapters: Chapter[] = [
     decision: {
       id: 'rto',
       name: 'The RTO data project',
-      prompt: 'A client offers WictroniX a large payout to build software that cleans and searches personal data from RTO records. Then you learn the data was obtained unethically. Half your team wants to take it.',
+      prompt: "A client offers WictroniX a lot of money to build software that cleans and searches people's personal data from RTO records. Then you find out how that data was collected, and it wasn't ethical. Half your team still wants the deal.",
       options: {
-        A: { label: 'Take the project', sub: 'A big payout. You only write the code.' },
-        B: { label: 'Walk away', sub: 'Turn down the money.' },
+        A: { label: 'Take the project', sub: "Big money. You'd only be writing the code." },
+        B: { label: 'Walk away', sub: 'Say no to the money.' },
       },
       mihir: 'B',
-      reveal: 'I argued to walk away, and after long debates the team agreed. Integrity comes before profit, especially when no one else would know.',
+      reveal: "I wanted us to walk away. We argued about it for a long time before the team agreed. Nobody outside would ever have known if we'd taken it. We would have known, though.",
     },
   },
   {
@@ -238,20 +239,20 @@ export const chapters: Chapter[] = [
     cards: [
       {
         id: 'stall',
-        body: 'By 2024, WictroniX had stopped growing. I had misjudged demand in some segments, struggled to keep clients for the long term, and had not built a team structure that could scale. Passion and effort had taken us far, but not far enough.',
+        body: "By 2024, WictroniX had stopped growing, and a lot of that was on me. I'd misread demand in some segments. We couldn't hold on to clients for long. And I hadn't built a team structure that could grow with us. Hard work had got us this far. It wasn't going to get us further.",
       },
     ],
     decision: {
       id: 'wictronix',
       name: 'WictroniX or something new',
-      prompt: 'Graduation is weeks away and your kite has fallen. Re-tie the same one, or pick up a new kite?',
+      prompt: 'Graduation is a few weeks away, and your kite is on the ground. Do you re-tie the same one, or pick up a new kite?',
       options: {
-        A: { label: 'Keep building WictroniX', sub: 'Fix it from the inside.' },
-        B: { label: 'Do something else', sub: 'Step away and start fresh.' },
+        A: { label: 'Keep building WictroniX', sub: "Stay and fix what's broken." },
+        B: { label: 'Do something else', sub: 'Step away and learn somewhere new.' },
       },
       mihir: 'B',
       // [CONFIRM]
-      reveal: 'I stepped away and joined Chingari, a Series A startup, as an Associate Product Manager. I wanted to learn how a funded company builds and scales products, the exact part I had struggled with.',
+      reveal: "I stepped away and joined Chingari, a Series A startup, as an Associate Product Manager. Scaling was exactly where I'd got stuck, so I wanted to see how a funded company really builds and grows a product.",
     },
   },
   {
@@ -264,11 +265,11 @@ export const chapters: Chapter[] = [
     cards: [
       {
         id: 'astrolive',
-        body: 'At Chingari, I co-led AstroLive, an astrology livestreaming product, from zero. Leadership wanted to reuse the Chingari codebase to launch faster. I believed the two business models were too different, so the Engineering Manager and I built a feature-level demo to show why. We built AstroLive from scratch.',
+        body: 'At Chingari I co-led AstroLive, an astrology livestreaming app, from zero. Leadership wanted to reuse the Chingari codebase so we could launch faster. I thought the two businesses were too different for that, so our Engineering Manager and I built a feature-level demo to show them why. In the end, we built AstroLive from scratch.',
       },
       {
         id: 'astrolive-growth',
-        body: 'AstroLive grew to 280K monthly active users and 62% month-on-month revenue growth, with a 24-member cross-functional team. I also integrated a UPI gateway that now processes ₹2 crore+ every month.',
+        body: 'AstroLive grew to 280K monthly active users, and revenue grew 62% month on month. We did it with a cross-functional team of 24. I also set up the UPI gateway, which now handles ₹2 crore+ every month.',
       },
     ],
   },
@@ -283,13 +284,13 @@ export const chapters: Chapter[] = [
     decision: {
       id: 'mba',
       name: 'Product manager or MBA',
-      prompt: 'You are 22 and leading a product that grows every month. You could stay and grow as a product manager. Or you could leave for two years of business school.',
+      prompt: "You're 22, and the product you lead is growing every month. You could stay and keep growing as a product manager. Or you could leave it for two years of business school.",
       options: {
-        A: { label: 'Stay a product manager', sub: 'Keep the momentum.' },
+        A: { label: 'Stay a product manager', sub: "Keep going while it's working." },
         B: { label: 'Go for an MBA', sub: 'Two years away from building.' },
       },
       mihir: 'B',
-      reveal: 'WictroniX had shown me my gaps in strategy, finance and scale, and I wanted to close them before building again. I scored 99.51 percentile in CAT 2024 and joined IIM Ahmedabad as a Praxis Scholar.',
+      reveal: "WictroniX had shown me how much I didn't know about strategy, finance and scale, and I wanted to fix that before I built anything again. I took CAT 2024, got 99.51 percentile, and joined IIM Ahmedabad as a Praxis Scholar.",
     },
   },
   {
@@ -309,7 +310,7 @@ export const chapters: Chapter[] = [
     cards: [
       {
         id: 'beyond-work',
-        body: 'Off the terrace, I travel, often to spiritual places like Palitana, Varanasi and Shravanabelagola. I read non-fiction, play chess and table tennis, and my writing on Quora has 100K+ views.',
+        body: "When I'm not working, I'm usually travelling, often to spiritual places like Palitana, Varanasi and Shravanabelagola. I read non-fiction, play chess and table tennis, and I write on Quora, where my answers have 100K+ views.",
         // Photo slot: IIM Ahmedabad. Add public/photos/iima.webp to show it.
         photo: 'iima.webp',
         photoAlt: 'Mihir at IIM Ahmedabad', // [CONFIRM]
@@ -328,21 +329,21 @@ export const chapters: Chapter[] = [
 ];
 
 export const ending = {
-  intro: 'Night falls. Every terrace lights a lantern.',
-  instruction: 'Tap a lantern to release it.',
+  intro: "It's dark now. All over the city, people are lighting lanterns on their terraces.",
+  instruction: 'These three are mine. Tap one to let it go.',
   lanterns: [
-    { id: 'lantern-1', text: 'Return to entrepreneurship.' }, // [CONFIRM]
-    { id: 'lantern-2', text: 'Build technology that makes small businesses resilient.' }, // [CONFIRM]
-    { id: 'lantern-3', text: "Solve problems at India's scale, with economic and social impact." }, // [CONFIRM]
+    { id: 'lantern-1', text: 'Start a company again.' }, // [CONFIRM]
+    { id: 'lantern-2', text: 'Help small businesses get through bad years.' }, // [CONFIRM]
+    { id: 'lantern-3', text: "Work on problems at India's scale." }, // [CONFIRM]
   ],
   /** {n} is replaced with the number of matching choices. */
   comparisonHeading: 'You flew {n} of 5 the way I did.',
   comparisonNotes: {
-    all: 'We would share a terrace.',
-    close: 'Close. We just read the wind differently.',
-    far: 'You would fly a different kite. I would like to hear why.',
+    all: "All five, same as me. We'd get along on a terrace.",
+    close: 'Close. We read the wind a little differently.',
+    far: "We'd fly very different kites. I'd honestly like to hear why.",
   },
-  closing: 'Most kites get cut eventually. What matters is whether you go back to the terrace.',
+  closing: 'Every kite gets cut sooner or later. I just keep going back up to the terrace with a new one.',
   buttons: {
     flyAgain: 'Fly again',
     readStory: 'Read the story',

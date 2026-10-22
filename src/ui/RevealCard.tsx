@@ -16,14 +16,16 @@ export function RevealCard({ decision, tone, chosen, eyebrow, onContinue }: Prop
   return (
     <article className={`card card--${tone} reveal`}>
       {eyebrow}
-      <div className="badges">
-        <span className="badge badge--outline">
-          {ui.youChose}: {decision.options[chosen].label}
-        </span>
-        <span className="badge badge--filled">
-          {ui.iChose}: {decision.options[decision.mihir].label}
-        </span>
-      </div>
+      <dl className={`ledger${chosen === decision.mihir ? ' is-same' : ''}`}>
+        <div className="ledger__row">
+          <dt>{ui.youChose}</dt>
+          <dd>{decision.options[chosen].label}</dd>
+        </div>
+        <div className="ledger__row ledger__row--mine">
+          <dt>{ui.iChose}</dt>
+          <dd>{decision.options[decision.mihir].label}</dd>
+        </div>
+      </dl>
       <p className="card__body">{decision.reveal}</p>
       {decision.result && <p className="stat">{decision.result}</p>}
       {onContinue && (
