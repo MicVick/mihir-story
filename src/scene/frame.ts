@@ -34,6 +34,8 @@ export const frame = {
   shake: 0,
   /** performance.now() when a milestone appeared, for the sparks around the kite; 0 for none. */
   celebrate: 0,
+  /** 0 or 1. A chapter title or milestone is on screen; the camera lifts so the kite sits below it. */
+  momentLift: 0,
   /** 0 to 1. The camera pushes in at the snap. */
   punch: 0,
   /** 0 to 1. Rain during Cut 1. */

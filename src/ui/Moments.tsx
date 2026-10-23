@@ -45,18 +45,25 @@ export function Moments() {
       const item = queue.current.shift();
       if (!item) {
         busy.current = false;
+        frame.momentLift = 0;
         setMoment(null);
         return;
       }
       busy.current = true;
       setLeaving(false);
       setMoment(item);
+      frame.momentLift = 1;
       if (item.kind === 'milestone') {
         playMilestone();
         frame.celebrate = performance.now();
       }
       const show = SHOW_MS[item.kind];
-      timers.push(window.setTimeout(() => setLeaving(true), show));
+      timers.push(
+        window.setTimeout(() => {
+          setLeaving(true);
+          frame.momentLift = 0;
+        }, show),
+      );
       timers.push(window.setTimeout(next, show + FADE_MS));
     };
 
@@ -80,7 +87,8 @@ export function Moments() {
 
       if (s.chapterIndex > prev.chapterIndex && free(prev)) {
         const chapter = chapters[s.chapterIndex];
-        if (!chapter.cut) push({ key: `chapter-${chapter.index}`, kind: 'chapter', chapter, kicker: `${ui.chapter} ${chapter.index}` });
+        // Cut chapters have their own drama, and the last chapter opens with the lanterns.
+        if (!chapter.cut && chapter.index < chapters.length - 1) push({ key: `chapter-${chapter.index}`, kind: 'chapter', chapter, kicker: `${ui.chapter} ${chapter.index}` });
       }
 
       // A card with a milestone, reached on the way up (also when a relaunch delivers the kite there).
@@ -105,6 +113,7 @@ export function Moments() {
       unsubscribe();
       timers.forEach((id) => window.clearTimeout(id));
       timers = [];
+      frame.momentLift = 0;
     };
   }, []);
 

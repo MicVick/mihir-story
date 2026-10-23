@@ -5,7 +5,8 @@
 .moment {
   position: absolute;
   z-index: 12;
-  left: clamp(84px, 8vw, 140px);
+  /* Clears the journey rail and its label on desktop. */
+  left: clamp(84px, 16vw, 260px);
   top: 15vh;
   max-width: min(44vw, 560px);
   pointer-events: none;
@@ -114,7 +115,7 @@
 
 .moment__value {
   font-family: var(--font-head);
-  font-size: clamp(72px, 9.5vw, 148px);
+  font-size: clamp(64px, 8.4vw, 128px);
   font-weight: 600;
   line-height: 0.95;
   letter-spacing: -0.035em;
@@ -214,7 +215,7 @@
 }
 
 .impact-vignette--slack {
-  animation-duration: 5s;
+  animation-duration: 3s;
   background: radial-gradient(ellipse 75% 65% at 45% 46%, transparent 35%, rgba(20, 18, 16, 0.45) 75%, rgba(12, 10, 8, 0.75) 100%);
 }
 

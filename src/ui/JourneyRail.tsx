@@ -8,12 +8,14 @@ import { useFlight } from '../state/store';
  * The whole journey down the left edge (desktop only): one stop per chapter
  * at its altitude, the kite moving along it, and the thread let out so far.
  * Stops ahead are plain dots; once reached they show what happened there,
- * a diamond for a decision and a break for a cut.
+ * a diamond for a decision and a break for a cut. Only the current chapter
+ * is labelled, to keep the sky clear.
  */
 export function JourneyRail() {
   const visited = useFlight((s) => s.visited);
   const current = useFlight((s) => (s.cut && (s.phase === 'cut' || s.phase === 'relaunch') ? cutStop(s.cut.id).chapter : s.chapterIndex));
-  const hidden = useFlight((s) => s.phase === 'intro');
+  // Hidden before launch, and in the ending, where the comparison table recaps the journey.
+  const hidden = useFlight((s) => s.phase === 'intro' || s.phase === 'ending');
   const kite = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export function JourneyRail() {
             style={{ '--at': c.altitude / MAX_ALTITUDE } as CSSProperties}
           >
             <span className="rail__mark" />
-            {seen && (
+            {c.index === current && (
               <span className="rail__label">
                 <span className="rail__num">{c.index}</span> {c.title}
               </span>

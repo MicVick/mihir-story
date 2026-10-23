@@ -29,6 +29,7 @@ const INTRO = {
  */
 export function CameraRig() {
   const ready = useRef(false);
+  const lift = useRef(0);
   const base = useRef(new Vector3());
 
   useFrame((state, delta) => {
@@ -47,7 +48,9 @@ export function CameraRig() {
     // On phones the kite rides higher at night, leaving room for the lanterns and their goals.
     const night = smoothstep(ENDING_ALTITUDE, ENDING_ALTITUDE + 15, altitude);
     const flyY = mobile ? anchor.y - halfH * (0.38 + 0.24 * night) : anchor.y - halfH * 0.05;
-    const ty = flyY + (anchor.y + intro.eye - flyY) * P + LANDED_RISE * frame.landed;
+    // While a title or milestone is up, the camera lifts so the kite sits clear below the text.
+    lift.current += (frame.momentLift - lift.current) * (1 - Math.exp(-Math.min(delta, 0.1) * 1.8));
+    const ty = flyY + (anchor.y + intro.eye - flyY) * P + LANDED_RISE * frame.landed + halfH * 0.24 * lift.current * (1 - P);
     const b = base.current;
 
     // First frame, or a jump far enough that easing would lose the kite.
