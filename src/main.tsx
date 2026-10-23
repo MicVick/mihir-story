@@ -5,6 +5,7 @@ import './styles/global.css';
 import './styles/components.css';
 import './styles/story.css';
 import './styles/flight.css';
+import './styles/cinematic.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -8,6 +8,12 @@ import type { SkyKey } from './palette';
 export type Choice = 'A' | 'B';
 export type KiteId = 1 | 2 | 3;
 
+/** A number worth stopping for. `value` is shown exactly as written; its digits count up in flight. */
+export interface Milestone {
+  value: string;
+  label: string;
+}
+
 export interface StoryCard {
   id: string;
   title?: string;
@@ -17,6 +23,7 @@ export interface StoryCard {
   photo?: string;
   /** Describes the photo for screen readers. */
   photoAlt?: string;
+  milestone?: Milestone;
 }
 
 export interface Decision {
@@ -28,6 +35,7 @@ export interface Decision {
   mihir: Choice;
   reveal: string;
   result?: string;
+  milestone?: Milestone;
 }
 
 export interface Chapter {
@@ -86,6 +94,7 @@ export const menu = {
   presenterHint: 'Press P to start or stop',
   readStory: 'Read the story instead',
   progress: 'Flight progress',
+  credits: 'Music: piano from the Salamander Grand Piano by Alexander Holm (CC BY 3.0); flute, strings and harp from tonejs-instruments.',
 };
 
 export const ui = {
@@ -93,6 +102,10 @@ export const ui = {
   youChose: 'You chose',
   iChose: 'I chose',
   rivalShout: 'Kai po che!',
+  chapter: 'Chapter',
+  newKite: 'A new kite',
+  milestone: 'Milestone',
+  setback: 'Setback',
   retie: 'Re-tie the string',
   continue: 'Continue',
   comparisonLocked: 'Make all five calls to see how your flight compares with mine.',
@@ -141,6 +154,7 @@ export const chapters: Chapter[] = [
      
       reveal: "I went to Kota. Staying would have been easier, and I think that's exactly why I didn't. I wanted to see what I could manage on my own.",
       result: 'Class XII: 95.8%, rank 5 of 171. KVPY Fellowship, All India Rank 191. JEE Mains: 99.64 percentile.',
+      milestone: { value: '99.64', label: 'percentile in JEE Mains' },
     },
   },
   {
@@ -201,11 +215,13 @@ export const chapters: Chapter[] = [
         // Photo slot: NIT Surat or the WictroniX team. Add public/photos/building.webp to show it.
         photo: 'building.webp',
         photoAlt: 'Mihir with his team at NIT Surat',
+        milestone: { value: '200%', label: 'growth in engagement in one year' },
       },
       {
         id: 'wictronix',
         title: 'Starting WictroniX',
         body: 'In 2022 I co-founded WictroniX to help small businesses, like the one my father ran, start using technology and digital tools. We were recognised by DPIIT as a startup, and we got to 50 clients in 8 industries and 3 countries, with ₹40 lakh in revenue.',
+        milestone: { value: '₹40 lakh', label: 'in revenue, from 50 clients in 3 countries' },
       },
     ],
     chipsTitle: 'Also at NIT Surat',
@@ -281,6 +297,7 @@ export const chapters: Chapter[] = [
         id: 'astrolive-growth',
         title: 'What it grew into',
         body: 'AstroLive grew to 280K monthly active users, and revenue grew 62% month on month. We did it with a cross-functional team of 24. I also set up the UPI gateway, which now handles ₹2 crore+ every month.',
+        milestone: { value: '280K', label: 'monthly active users on AstroLive' },
       },
     ],
   },
@@ -302,6 +319,7 @@ export const chapters: Chapter[] = [
       },
       mihir: 'B',
       reveal: "WictroniX had shown me how much I didn't know about strategy, finance and scale, and I wanted to fix that before I built anything again. I took CAT 2024, got 99.51 percentile, and joined IIM Ahmedabad as a Praxis Scholar.",
+      milestone: { value: '99.51', label: 'percentile in CAT 2024' },
     },
   },
   {

@@ -1,14 +1,18 @@
 // Layered sound, off by default. Nothing loads until the visitor turns it on.
-// Each layer plays its file from public/audio when one exists (music.mp3,
-// wind.mp3, crowd.mp3, creak.mp3, kaipoche.mp3, bells.mp3). Music, wind,
-// creak and bells fall back to sounds made in the browser, so sound works
-// before any file is added. The crowd and the "Kai po che!" shout need their files.
+// Music is recorded piano, flute and strings, rendered by tools/music/render.py:
+//   music.mp3      the main theme, looping through the flight
+//   music-cut.mp3  the setback theme, in place of the main theme during a cut
+//   impact.mp3     a low piano hit as the string snaps
+//   milestone.mp3  a harp swell when a milestone appears
+//   bells.mp3      a lantern rising
+// Wind and creak are made in the browser unless wind.mp3 or creak.mp3 exist.
+// The crowd and the "Kai po che!" shout play only from crowd.mp3 and kaipoche.mp3.
 
 import files from 'virtual:audio';
-import { createMusic, type Mood, type Music } from './music';
+import { SNAP, SLACK } from '../scene/cutTimes';
 import { useFlight } from '../state/store';
 
-type Layer = 'music' | 'wind' | 'crowd' | 'creak' | 'kaipoche' | 'bells';
+type Layer = 'music' | 'music-cut' | 'impact' | 'milestone' | 'wind' | 'crowd' | 'creak' | 'kaipoche' | 'bells';
 
 const fileFor = (layer: Layer) => files.find((f) => f.replace(/\.[^.]+$/, '') === layer);
 
@@ -17,7 +21,7 @@ interface Engine {
   master: GainNode;
   wind: { gain: GainNode; filter: BiquadFilterNode | null };
   crowd: GainNode | null;
-  music: Music | null;
+  music: { main: GainNode; cut: GainNode };
   buffers: Partial<Record<Layer, AudioBuffer>>;
 }
 
@@ -79,19 +83,16 @@ function start(): Engine {
   const windGain = ctx.createGain();
   windGain.gain.value = 0;
   windGain.connect(master);
-  const e: Engine = { ctx, master, wind: { gain: windGain, filter: null }, crowd: null, music: null, buffers: {} };
-
-  // Music: the file if there is one, otherwise the tanpura and santoor made in the browser.
-  const musicGain = ctx.createGain();
-  musicGain.gain.value = 0.9;
-  musicGain.connect(master);
-  if (fileFor('music')) {
-    void loadFile(ctx, 'music').then((buffer) => {
-      if (buffer) loop(ctx, buffer, musicGain);
+  // Both themes loop from the start, silent until their moment; the gains cross-fade them.
+  const music = { main: ctx.createGain(), cut: ctx.createGain() };
+  for (const [layer, gain] of [['music', music.main], ['music-cut', music.cut]] as const) {
+    gain.gain.value = 0;
+    gain.connect(master);
+    void loadFile(ctx, layer).then((buffer) => {
+      if (buffer) loop(ctx, buffer, gain);
     });
-  } else {
-    e.music = createMusic(ctx, musicGain);
   }
+  const e: Engine = { ctx, master, wind: { gain: windGain, filter: null }, crowd: null, music, buffers: {} };
 
   // Synthesised wind until (or unless) the file arrives.
   const filter = ctx.createBiquadFilter();
@@ -117,7 +118,7 @@ function start(): Engine {
     loop(ctx, buffer, gain);
     e.crowd = gain;
   });
-  for (const layer of ['creak', 'kaipoche', 'bells'] as const) {
+  for (const layer of ['creak', 'kaipoche', 'bells', 'impact', 'milestone'] as const) {
     void loadFile(ctx, layer).then((buffer) => {
       if (buffer) e.buffers[layer] = buffer;
     });
@@ -155,19 +156,23 @@ export function updateSound(altitude: number, gust: number) {
   }
   crowd?.gain.setTargetAtTime(0.5 * (1 - smooth(0, 120, altitude)), t, 0.6);
 
-  if (engine.music) {
-    engine.music.setMood(moodNow());
-    engine.music.scheduleUntil(t + 0.8);
-  }
-}
-
-/** The music's mood follows the story: the terrace, the climb, the cuts, the night. */
-function moodNow(): Mood {
+  // The music follows the story. The main theme plays softly on the terrace and fully in
+  // flight. In a cut it dips as the rival's string crosses, drops to silence at the snap
+  // (the impact plays there), and the setback theme comes in after a breath. On relaunch
+  // the setback theme fades and the main theme returns.
   const s = useFlight.getState();
-  if (s.phase === 'intro') return 'intro';
-  if (s.phase === 'cut') return 'cut';
-  if (s.phase === 'ending' || s.chapterIndex >= 10) return 'night';
-  return 'day';
+  let main = s.phase === 'intro' ? 0.55 : 0.75;
+  let cut = 0;
+  let mainRate = 1.2;
+  if (s.phase === 'cut' && s.cut) {
+    const since = (performance.now() - s.cut.startedAt) / 1000;
+    const drop = s.cut.id === 'snap' ? SNAP.snap : SLACK.slack;
+    main = since < drop ? 0.3 : 0;
+    mainRate = since < drop ? 0.4 : 0.06;
+    cut = since > drop + 1.6 ? 0.8 : 0;
+  }
+  engine.music.main.gain.setTargetAtTime(main, t, mainRate);
+  engine.music.cut.gain.setTargetAtTime(cut, t, cut ? 1.4 : 0.9);
 }
 
 function playBuffer(buffer: AudioBuffer, volume: number, when = 0) {
@@ -211,6 +216,18 @@ export function playCreak() {
 export function playShout() {
   if (!engine || !useFlight.getState().sound || !engine.buffers.kaipoche) return;
   playBuffer(engine.buffers.kaipoche, 0.9);
+}
+
+/** The weight of a setback: a low piano hit. Softer for the slow, slack cut. */
+export function playImpact(volume = 1) {
+  if (!engine || !useFlight.getState().sound || !engine.buffers.impact) return;
+  playBuffer(engine.buffers.impact, 0.9 * volume);
+}
+
+/** A milestone appears: a harp swell. */
+export function playMilestone() {
+  if (!engine || !useFlight.getState().sound || !engine.buffers.milestone) return;
+  playBuffer(engine.buffers.milestone, 0.7);
 }
 
 /** The string parting: a short bright snap. */

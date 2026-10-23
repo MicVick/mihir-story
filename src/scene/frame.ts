@@ -32,6 +32,10 @@ export const frame = {
   perched: 1,
   /** 0 to 1. Short camera shake when the strings cross. */
   shake: 0,
+  /** performance.now() when a milestone appeared, for the sparks around the kite; 0 for none. */
+  celebrate: 0,
+  /** 0 to 1. The camera pushes in at the snap. */
+  punch: 0,
   /** 0 to 1. Rain during Cut 1. */
   rain: 0,
   /** Point on the string where the rival kite crosses it (30% down from the kite). */

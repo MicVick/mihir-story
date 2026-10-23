@@ -2,24 +2,30 @@
 // elapsed time, so the scene, the camera and the HTML layer stay in step.
 
 import { cutStop, type CutId } from '../content/beats';
+import { SLACK, SNAP } from './cutTimes';
 import { smoothstep } from './skyMath';
 
-/** Cut 1: a rival kite crosses the string, "Kai po che!", the string snaps, the kite falls. */
-export const SNAP = {
-  /** The rival kite takes this long to reach the string. */
-  cross: 1.5,
-  /** The string snaps. */
-  snap: 1.9,
-  /** The kite comes to rest on the rooftops. */
-  land: 5.4,
-};
+export { SLACK, SNAP };
 
-/** Cut 2: the string goes slack and the kite drifts down slowly. */
-export const SLACK = {
-  slack: 0.8,
-  fallStart: 0.6,
-  land: 6.6,
-};
+/** Cut 1 slows down as the string parts (1.2 s at 30% speed), then the fall runs at full speed. */
+const SLOW = { real: 1.2, rate: 0.3 };
+
+/**
+ * Story time for a cut, from real seconds since it began. Every timing in
+ * this file is in story time, so the slow motion reaches the kite, the
+ * string, the camera and the cards alike.
+ */
+export function cutClock(id: CutId, t: number, reduced: boolean): number {
+  if (id !== 'snap' || reduced || t <= SNAP.snap) return t;
+  if (t < SNAP.snap + SLOW.real) return SNAP.snap + (t - SNAP.snap) * SLOW.rate;
+  return SNAP.snap + SLOW.real * SLOW.rate + (t - SNAP.snap - SLOW.real);
+}
+
+/** 0 to 1. The camera pushes in hard at the snap and eases back out as the kite falls. */
+export function punchAt(id: CutId, t: number, reduced: boolean): number {
+  if (id !== 'snap' || reduced) return 0;
+  return smoothstep(SNAP.snap, SNAP.snap + 0.12, t) * (1 - smoothstep(SNAP.snap + 0.36, SNAP.snap + 1.6, t));
+}
 
 /** Under reduced motion the fall and the rise are a fade through the sky colour. */
 const FADE = 0.5;

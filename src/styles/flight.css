@@ -969,3 +969,10 @@ html.is-flying body {
     top: 12%;
   }
 }
+
+.menu__credits {
+  margin-top: 10px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--soft);
+}

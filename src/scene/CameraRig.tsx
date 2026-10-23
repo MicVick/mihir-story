@@ -38,7 +38,7 @@ export function CameraRig() {
     const intro = mobile ? INTRO.mobile : INTRO.desktop;
     const P = frame.perched;
     // Pull back a little at decisions to show the gust and the bent string.
-    const distance = DISTANCE + 2.5 * frame.gust + (intro.distance - DISTANCE) * P;
+    const distance = DISTANCE + 2.5 * frame.gust + (intro.distance - DISTANCE) * P - 3.2 * frame.punch;
     const halfH = distance * Math.tan((camera.fov * Math.PI) / 360);
     const halfW = halfH * (state.size.width / state.size.height);
 

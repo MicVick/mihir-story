@@ -54,18 +54,38 @@ To use a different photo or card, set `photo` and `photoAlt` on the card in `sto
 
 **Sound** is off until the visitor turns it on ("Play with music" on the opening screen, the speaker icon, or the menu), and nothing loads before that.
 
-**Music** is made in the browser (`src/audio/music.ts`): a tanpura drone in D with santoor-like phrases over it. It follows the story: sparse on the terrace, a bright five-note scale on the climb, slow dark phrases in the two cuts, and a softer evening scale for the lanterns. To use a recording instead, add `music.mp3`; it loops in place of the generated music. Files go in `public/audio/`, under 1.5 MB in total, royalty-free or self-recorded:
+**Music** is an original piece recorded from real instrument samples: piano arpeggios in D, a pentatonic melody that passes from piano to flute, and soft violins and cello underneath. It is rendered offline by `tools/music/render.py` (Python with numpy, and ffmpeg) into `public/audio/`:
 
 | File | Plays |
 | --- | --- |
-| `music.mp3` | Looping background music, replacing the generated music |
-| `wind.mp3` | Looping; louder with altitude and in the gusts at decisions |
-| `crowd.mp3` | Looping distant rooftop crowd, Chapter 0 only |
-| `creak.mp3` | Once, as the string tightens at each decision |
-| `kaipoche.mp3` | Once, the "Kai po che!" shout at Cut 1 |
-| `bells.mp3` | Once per lantern released |
+| `music.mp3` | The main theme (2:07, loops). Soft on the terrace, full in flight |
+| `music-cut.mp3` | The setback theme (B minor, slow piano and cello), in place of the main theme during a cut |
+| `impact.mp3` | A low piano hit as the string snaps (softer for the slack cut) |
+| `milestone.mp3` | A harp swell when a milestone number appears |
+| `bells.mp3` | Three harp notes as each lantern rises |
 
-Until the files are added, the music, wind, creak and bells are synthesised in the browser and a short snap plays when the string is cut. The crowd and the shout play only from their files.
+In a cut, the main theme dips as the rival's string crosses, drops to silence at the snap, and the setback theme comes in after a breath; on relaunch the main theme returns. Everything loads only after sound is turned on (about 2.7 MB).
+
+To change the music, edit `tools/music/render.py` and run `python3 -I tools/music/render.py <samples dir> public/audio`. The samples come from npm: `@audio-samples/piano-mp3-velocity4`, `-velocity7`, `-velocity10`, and `tonejs-instrument-flute-mp3`, `-violin-mp3`, `-cello-mp3`, `-harp-mp3` (unpack each into the samples dir, as the script's paths show).
+
+**Credits.** Piano: [Salamander Grand Piano V3](https://archive.org/details/SalamanderGrandPianoV3) by Alexander Holm, CC BY 3.0. Flute, violin, cello and harp: [tonejs-instruments](https://github.com/nbrosowsky/tonejs-instruments), from public domain sources. The credit line also appears at the foot of the spool menu.
+
+Optional extra files in `public/audio/`, royalty-free or self-recorded:
+
+| File | Plays |
+| --- | --- |
+| `wind.mp3` | Looping wind, louder with altitude and in the gusts at decisions (synthesised until added) |
+| `crowd.mp3` | Looping distant rooftop crowd, Chapter 0 only |
+| `creak.mp3` | The string tightening at each decision (synthesised until added) |
+| `kaipoche.mp3` | The "Kai po che!" shout at Cut 1 |
+
+## The turns of the story
+
+- **Chapter titles** rise over the sky as each chapter begins; after a cut the new kite's chapter is titled "A new kite".
+- **Milestones** (`milestone` on a card or decision in `story.ts`) count up beside the kite with gold sparks and a harp swell: 99.64, 200%, ₹40 lakh, 280K, 99.51. In story mode they stand large between the cards.
+- **Setbacks**: at the snap the screen flashes, the camera punches in, the fall runs in slow motion for a moment and the edges close in. The setback is then told full-screen on a dark veil, a sentence at a time. In story mode the cut chapters are dark bands.
+- **Decisions**: the wind picks up and streaks cross the sky while a decision is open.
+- **The journey rail** (desktop) runs down the left edge: every chapter at its altitude, the kite moving along it, with a diamond for each decision and a break for each cut once reached.
 
 ## Deploy (Vercel)
 
@@ -85,8 +105,8 @@ Until the files are added, the music, wind, creak and bells are synthesised in t
 - `src/state/compare.ts`: the "You flew n of 5" score and note.
 - `src/input/useFlightInput.ts`: wheel, touch and keys mapped to a target altitude (virtual scroll), plus Esc and P.
 - `src/scene/`: the Three.js scene. `Rooftops.tsx` is the city and the home terrace, `haze.ts` the aerial perspective that fades everything into the sky, `cutTimeline.ts` the timings for both cuts.
-- `src/audio/sound.ts`: the sound layers; `music.ts`: the generated music.
-- `src/ui/`: React components. `StoryMode.tsx` is the readable page, `SpoolMenu.tsx` the menu, `usePresenter.ts` presenter mode.
+- `src/audio/sound.ts`: the sound layers and the music cues. `tools/music/render.py`: renders the music.
+- `src/ui/`: React components. `Moments.tsx` is the chapter titles and milestones, `CutSequence.tsx` the setbacks, `JourneyRail.tsx` the rail. `StoryMode.tsx` is the readable page, `SpoolMenu.tsx` the menu, `usePresenter.ts` presenter mode.
 - `src/styles/`: `global.css` (tokens, cards, buttons), `components.css` (shared by both modes), `flight.css`, `story.css`.
 
 ## Build phases

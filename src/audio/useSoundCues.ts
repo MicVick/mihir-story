@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { SNAP } from '../scene/cutTimeline';
+import { SLACK, SNAP } from '../scene/cutTimes';
 import { useFlight } from '../state/store';
-import { pauseSound, playBell, playCreak, playShout, playSnap } from './sound';
+import { pauseSound, playBell, playCreak, playImpact, playShout, playSnap } from './sound';
 
-/** One-off sounds tied to the story: the creak at decisions, the cut, the lantern bells. */
+/** One-off sounds tied to the story: the creak at decisions, the cuts and their impact, the lantern bells. */
 export function useSoundCues() {
   useEffect(() => {
     const timers: number[] = [];
@@ -13,6 +13,11 @@ export function useSoundCues() {
         const elapsed = performance.now() - s.cut.startedAt;
         timers.push(window.setTimeout(playShout, Math.max(0, SNAP.cross * 1000 - elapsed)));
         timers.push(window.setTimeout(playSnap, Math.max(0, SNAP.snap * 1000 - elapsed)));
+        timers.push(window.setTimeout(() => playImpact(1), Math.max(0, SNAP.snap * 1000 - elapsed)));
+      }
+      if (s.cut && s.cut.startedAt !== prev.cut?.startedAt && s.cut.id === 'slack') {
+        const elapsed = performance.now() - s.cut.startedAt;
+        timers.push(window.setTimeout(() => playImpact(0.6), Math.max(0, SLACK.slack * 1000 - elapsed)));
       }
       if (s.lanterns.length > prev.lanterns.length) playBell(s.lanterns[s.lanterns.length - 1]);
     });

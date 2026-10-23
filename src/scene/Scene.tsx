@@ -7,7 +7,7 @@ import { LAUNCH_MS, useFlight } from '../state/store';
 import { CameraRig } from './CameraRig';
 import { Birds } from './Birds';
 import { Clouds } from './Clouds';
-import { cutAltitude, fallEnd, landedAt, riseAltitude, riseDuration, SNAP, SLACK, veilAt } from './cutTimeline';
+import { cutAltitude, cutClock, fallEnd, landedAt, punchAt, riseAltitude, riseDuration, SNAP, SLACK, veilAt } from './cutTimeline';
 import { frame } from './frame';
 import { Kite, RestingKite } from './Kite';
 import { Lanterns } from './Lanterns';
@@ -16,6 +16,7 @@ import { RivalKites } from './RivalKites';
 import { Rooftops } from './Rooftops';
 import { sampleSky, smoothstep } from './skyMath';
 import { Sky } from './Sky';
+import { Sparks } from './Sparks';
 import { KiteString } from './String';
 import { Veil } from './Veil';
 
@@ -53,13 +54,14 @@ function AltitudeDriver() {
     frame.relaunchT = -1;
     frame.veil = 0;
     frame.shake = 0;
+    frame.punch = 0;
     let desatTarget = 0;
     let rainTarget = 0;
 
     if (s.cut && (s.phase === 'cut' || s.phase === 'relaunch')) {
       const stop = cutStop(s.cut.id);
       const snap = s.cut.id === 'snap';
-      const t = (now - s.cut.startedAt) / 1000;
+      const t = cutClock(s.cut.id, (now - s.cut.startedAt) / 1000, reduced);
 
       if (s.phase === 'cut') {
         frame.cutT = t;
@@ -67,6 +69,9 @@ function AltitudeDriver() {
         frame.landed = landedAt(s.cut.id, t, reduced);
         if (reduced) frame.veil = veilAt(snap ? SNAP.snap : SLACK.fallStart, t);
         if (snap && !reduced && t > SNAP.cross && t < SNAP.snap) frame.shake = 1;
+        // The snap itself: a hard jolt, and the camera punches in.
+        if (snap && !reduced && t >= SNAP.snap && t < SNAP.snap + 0.3) frame.shake = 2.2 * (1 - (t - SNAP.snap) / 0.3);
+        frame.punch = punchAt(s.cut.id, t, reduced);
         if (s.cut.step === 0 && t >= fallEnd(s.cut.id, reduced)) s.advanceCut();
         desatTarget = snap ? (t > SNAP.snap ? 1 : 0) : 0.5;
         rainTarget = snap && !reduced ? 1 : 0;
@@ -182,6 +187,7 @@ export function Scene() {
       <Birds />
       <KiteString />
       <Kite />
+      <Sparks />
       <RestingKite />
       <Rain />
       <Veil />

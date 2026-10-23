@@ -10,7 +10,9 @@ import { DecisionPanel } from './DecisionPanel';
 import { Ending } from './Ending';
 import { Eyebrow } from './Eyebrow';
 import { ChevronUpIcon } from './icons';
+import { JourneyRail } from './JourneyRail';
 import { LanternField } from './LanternField';
+import { Moments } from './Moments';
 import { RevealCard } from './RevealCard';
 import { SpoolMenu } from './SpoolMenu';
 import { StoryCard } from './StoryCard';
@@ -38,6 +40,8 @@ export function FlightOverlay() {
         ))}
       </div>
       <Hint />
+      <Moments />
+      <JourneyRail />
       {atEnding && <LanternField />}
       <CutSequence />
       <TopBar />

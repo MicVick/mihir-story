@@ -122,3 +122,120 @@
   padding-top: 22px;
   padding-bottom: 22px;
 }
+
+/* Milestones: a large number between the cards. */
+.milestone-mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 18px 0 10px;
+  text-align: center;
+}
+
+.milestone-mark__kicker {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--soft-on-sky, rgba(31, 36, 48, 0.7));
+}
+
+.milestone-mark__value {
+  font-family: var(--font-head);
+  font-size: clamp(64px, 12vw, 104px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-variation-settings: 'opsz' 144;
+  background: linear-gradient(180deg, #e88f1a 0%, #b85a0c 60%, #8e4108 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 18px rgba(255, 245, 225, 0.8));
+}
+
+.chapter--dark .milestone-mark__value {
+  background: linear-gradient(180deg, #ffe3a6 0%, #f4a63a 55%, #d9771f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 2px 18px rgba(255, 170, 60, 0.4));
+}
+
+.chapter--dark .milestone-mark__kicker,
+.chapter--dark .milestone-mark__label {
+  color: rgba(245, 241, 234, 0.85);
+}
+
+.milestone-mark__label {
+  max-width: 24ch;
+  font-family: var(--font-text);
+  font-size: 20px;
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+/* Setbacks: the chapter turns dark and grey, and the text stands on its own. */
+.chapter--setback {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(40, 40, 46, 0.9), rgba(14, 14, 18, 0.98)),
+    var(--sky-top);
+  color: var(--paper);
+  padding-top: 120px;
+  padding-bottom: 120px;
+}
+
+.chapter--setback .chapter__header {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  padding-left: 0;
+}
+
+.chapter--setback .chapter__num {
+  color: #e05a4a;
+}
+
+.chapter--setback .chapter__title {
+  font-size: clamp(40px, 7vw, 64px);
+  font-style: italic;
+  font-weight: 500;
+  color: var(--paper);
+}
+
+.chapter--setback .chapter__period {
+  color: rgba(245, 241, 234, 0.6);
+}
+
+.chapter--setback .chapter__heading {
+  border-left-color: rgba(245, 241, 234, 0.2);
+}
+
+.setback-story {
+  margin: 8px 0 18px;
+}
+
+.setback-story__title {
+  margin-bottom: 12px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lantern);
+}
+
+.setback-story__text {
+  font-family: var(--font-text);
+  font-size: clamp(21px, 3vw, 26px);
+  line-height: 1.6;
+  text-wrap: pretty;
+  color: rgba(245, 241, 234, 0.94);
+}
+
+.chapter--setback .shout {
+  color: var(--ink);
+}

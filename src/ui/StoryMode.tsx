@@ -1,6 +1,6 @@
-import type { CSSProperties } from 'react';
+import { Fragment, type CSSProperties } from 'react';
 import { kites, skies } from '../content/palette';
-import { chapters, ending, intro, ui, type Chapter } from '../content/story';
+import { chapters, ending, intro, ui, type Chapter, type Milestone } from '../content/story';
 import { useFlight } from '../state/store';
 import { Chips } from './Chips';
 import { DecisionPanel } from './DecisionPanel';
@@ -36,7 +36,7 @@ function ChapterSection({ chapter }: { chapter: Chapter }) {
   } as CSSProperties;
 
   return (
-    <section className={`chapter chapter--${tone}`} style={style} aria-labelledby={headingId}>
+    <section className={`chapter chapter--${tone}${chapter.cut ? ' chapter--setback' : ''}`} style={style} aria-labelledby={headingId}>
       <div className="chapter__inner">
         {chapter.index === 0 && <Hero />}
 
@@ -60,9 +60,20 @@ function ChapterSection({ chapter }: { chapter: Chapter }) {
 
         {chapter.chips && chapter.chipsFirst && <Chips chips={chapter.chips} tone={tone} title={chapter.chipsTitle} />}
 
-        {chapter.cards.map((card) => (
-          <StoryCard key={card.id} card={card} tone={tone} />
-        ))}
+        {chapter.cards.map((card) =>
+          chapter.cut ? (
+            // A setback reads as plain text on the dark band, not as a card.
+            <div key={card.id} className="setback-story">
+              {card.title && <h3 className="setback-story__title">{card.title}</h3>}
+              <p className="setback-story__text">{card.body}</p>
+            </div>
+          ) : (
+            <Fragment key={card.id}>
+              <StoryCard card={card} tone={tone} />
+              {card.milestone && <MilestoneMark milestone={card.milestone} />}
+            </Fragment>
+          ),
+        )}
 
         {chapter.chips && !chapter.chipsFirst && <Chips chips={chapter.chips} tone={tone} title={chapter.chipsTitle} />}
 
@@ -71,6 +82,17 @@ function ChapterSection({ chapter }: { chapter: Chapter }) {
         {chapter.index === chapters.length - 1 && <StoryEnding tone={tone} />}
       </div>
     </section>
+  );
+}
+
+/** A number worth stopping for, set large between the cards. */
+function MilestoneMark({ milestone }: { milestone: Milestone }) {
+  return (
+    <p className="milestone-mark">
+      <span className="milestone-mark__kicker">{ui.milestone}</span>
+      <span className="milestone-mark__value">{milestone.value}</span>
+      <span className="milestone-mark__label">{milestone.label}</span>
+    </p>
   );
 }
 
@@ -106,6 +128,7 @@ function StoryDecision({ chapter }: { chapter: Chapter }) {
       />
       <div aria-live="polite" className="live">
         {chosen && <RevealCard decision={decision} tone={tone} chosen={chosen} />}
+        {chosen && decision.milestone && <MilestoneMark milestone={decision.milestone} />}
       </div>
     </>
   );

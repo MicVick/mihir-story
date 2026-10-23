@@ -5,6 +5,7 @@ import { Scene } from '../scene/Scene';
 import { useFlight } from '../state/store';
 import { FlightOverlay } from './FlightOverlay';
 import { usePresenter } from './usePresenter';
+import { WindStreaks } from './WindStreaks';
 
 /** The interactive flight: WebGL scene behind, all text as HTML in front. */
 export default function Flight() {
@@ -26,6 +27,7 @@ export default function Flight() {
       </div>
       {/* Paper grain and a soft vignette over the scene, under the text. */}
       <div className="flight__finish" aria-hidden="true" />
+      <WindStreaks />
       <FlightOverlay />
     </div>
   );

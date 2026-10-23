@@ -111,6 +111,7 @@ export function SpoolMenu() {
         <button type="button" className="text-link menu__story" onClick={() => setMode('story')}>
           {menu.readStory}
         </button>
+        <p className="menu__credits">{menu.credits}</p>
       </div>
     </>
   );
