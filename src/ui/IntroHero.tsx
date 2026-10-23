@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { setSoundOn } from '../audio/sound';
 import { kites } from '../content/palette';
 import { intro } from '../content/story';
 import { prefersReducedMotion } from '../lib/device';
 import { useFlight } from '../state/store';
 import { HoldButton } from './HoldButton';
-import { KiteGlyph } from './icons';
+import { KiteGlyph, SoundIcon } from './icons';
 
 const kite = kites[1];
 
@@ -19,6 +20,7 @@ export function IntroHero() {
   const ready = useFlight((s) => s.sceneReady);
   const launch = useFlight((s) => s.launch);
   const setMode = useFlight((s) => s.setMode);
+  const sound = useFlight((s) => s.sound);
   const reduced = useMemo(prefersReducedMotion, []);
   const [keepFlying, setKeepFlying] = useState(false);
   // If index.html already showed the title, take its place without animating in again.
@@ -54,9 +56,15 @@ export function IntroHero() {
             {intro.loader}
           </p>
         )}
-        <button type="button" className="text-link" onClick={() => setMode('story')}>
-          {intro.readStory}
-        </button>
+        <div className="intro__links">
+          <button type="button" className="text-link intro__music" aria-pressed={sound} onClick={() => setSoundOn(!sound)}>
+            <SoundIcon on={sound} />
+            {sound ? intro.musicOn : intro.music}
+          </button>
+          <button type="button" className="text-link" onClick={() => setMode('story')}>
+            {intro.readStory}
+          </button>
+        </div>
       </div>
       {reduced && !keepFlying && (
         <div className="intro__motion card card--light" role="note">

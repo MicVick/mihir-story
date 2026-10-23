@@ -26,13 +26,10 @@ type BeatContent = WithoutBand<Beat>;
 function beatsFor(chapter: Chapter): BeatContent[] {
   const c = chapter.index;
   const list: BeatContent[] = [];
-  if (chapter.chips && chapter.chipsTitle) {
-    list.push({ id: `chips-${c}`, chapter: c, kind: 'chips', chips: chapter.chips, title: chapter.chipsTitle });
-  }
+  const chips = chapter.chips && ({ id: `chips-${c}`, chapter: c, kind: 'chips', chips: chapter.chips, title: chapter.chipsTitle } as const);
+  if (chips && chapter.chipsFirst) list.push(chips);
   for (const card of chapter.cards) list.push({ id: card.id, chapter: c, kind: 'card', card });
-  if (chapter.chips && !chapter.chipsTitle) {
-    list.push({ id: `chips-${c}`, chapter: c, kind: 'chips', chips: chapter.chips });
-  }
+  if (chips && !chapter.chipsFirst) list.push(chips);
   if (chapter.decision) {
     list.push({ id: `decision-${chapter.decision.id}`, chapter: c, kind: 'decision', decision: chapter.decision });
   }

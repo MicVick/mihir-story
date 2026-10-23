@@ -2,7 +2,6 @@
 // Components never hardcode copy. Rules: plain, spoken language (write it the
 // way Mihir would say it), no em or en dashes, numbers exactly as written in
 // SPEC.md Section 3.
-// Lines marked [CONFIRM] are drafts Mihir will check before launch.
 
 import type { SkyKey } from './palette';
 
@@ -44,8 +43,10 @@ export interface Chapter {
   kite: KiteId;
   cards: StoryCard[];
   chips?: StoryCard[];
-  /** When set, the chips open the chapter as a titled highlights card. Otherwise they follow the cards. */
+  /** Heading for the chips card. */
   chipsTitle?: string;
+  /** The chips open the chapter. Otherwise they follow the cards. */
+  chipsFirst?: boolean;
   decision?: Decision;
   cut?: 'snap' | 'slack';
 }
@@ -63,6 +64,8 @@ export const intro = {
   heroSubtitle: "Take my kite up. On the way, you'll face the five calls I had to make.",
   launch: 'Hold to launch',
   readStory: 'Read the story instead',
+  music: 'Play with music',
+  musicOn: 'Music on',
   hint: 'Scroll or swipe up to let out more string.',
   reducedMotion: 'Your device is set to reduce motion. You can read all of this as a normal page instead.',
   reducedMotionRead: 'Read it as a page',
@@ -74,9 +77,9 @@ export const menu = {
   close: 'Close',
   heading: 'Chapters',
   locked: 'Not reached yet',
-  sound: 'Sound',
-  soundOn: 'Turn sound on',
-  soundOff: 'Turn sound off',
+  sound: 'Music and sound',
+  soundOn: 'Turn music and sound on',
+  soundOff: 'Turn music and sound off',
   on: 'On',
   off: 'Off',
   presenter: 'Presenter mode',
@@ -109,11 +112,12 @@ export const chapters: Chapter[] = [
     cards: [
       {
         id: 'terrace',
+        title: 'Where I grew up',
         body: 'I grew up in Vadodara and went to Bright School. Every Uttarayan, the whole city goes up to its roofs, and my family spent the day on this terrace. My father ran a small business in town.',
         stat: 'Class X: 92.5%, top 0.36% in the state.',
         // Photo slot: childhood or family. Add public/photos/terrace.webp to show it.
         photo: 'terrace.webp',
-        photoAlt: 'Mihir as a child with his family on the terrace in Vadodara', // [CONFIRM]
+        photoAlt: 'Mihir as a child with his family on the terrace in Vadodara',
       },
     ],
   },
@@ -134,7 +138,7 @@ export const chapters: Chapter[] = [
         B: { label: 'Go to Kota', sub: 'A new city, on your own.' },
       },
       mihir: 'B',
-      // [CONFIRM]
+     
       reveal: "I went to Kota. Staying would have been easier, and I think that's exactly why I didn't. I wanted to see what I could manage on my own.",
       result: 'Class XII: 95.8%, rank 5 of 171. KVPY Fellowship, All India Rank 191. JEE Mains: 99.64 percentile.',
     },
@@ -150,20 +154,20 @@ export const chapters: Chapter[] = [
     decision: {
       id: 'branch',
       name: 'IIT or NIT Surat CSE',
-      prompt: 'With your rank, you can get Civil or Mechanical Engineering at IIT Delhi or IIT Bombay. Or you can get Computer Science at NIT Surat.',
+      prompt: 'Your rank gets you Civil or Mechanical Engineering at IIT Delhi or IIT Bombay, or Computer Science at NIT Surat. You can only take one.',
       options: {
         A: { label: 'IIT, Civil or Mechanical', sub: 'The IIT name on your degree.' },
         B: { label: 'NIT Surat, Computer Science', sub: 'The subject you actually want.' },
       },
       mihir: 'B',
-      // [CONFIRM]
+     
       reveal: "I took Computer Science at NIT Surat. I wanted to build things with software, and I didn't want to spend four years on a subject I'd only picked for the IIT name.",
     },
   },
   {
     index: 3,
-    title: 'The cut',
-    period: '19',
+    title: 'Losing my father',
+    period: '19 (2021)',
     altitude: 250,
     // The cut kite falls all the way back to the home terrace.
     fallTo: 0,
@@ -177,30 +181,34 @@ export const chapters: Chapter[] = [
       },
       {
         id: 'cut-2',
-        body: "Those months taught me to stay calm when things go wrong, and to be grateful for what I still had. I'd also seen up close what the pandemic did to small businesses like his. I couldn't stop thinking about that.",
+        title: 'What it left me with',
+        body: "Those months taught me to stay calm when things go wrong, and to be grateful for what I still had. I'd also seen up close what the pandemic did to small businesses like his, and I couldn't stop thinking about it.",
       },
     ],
   },
   {
     index: 4,
     title: 'Building',
-    period: 'NIT Surat years',
+    period: 'NIT Surat, 2020 to 2024',
     altitude: 300,
     sky: 'noon',
     kite: 2,
     cards: [
       {
         id: 'nexus',
+        title: 'Bringing campus back to life',
         body: 'When college reopened after COVID, it felt empty. Seniors and juniors hardly knew each other. A few classmates and I went to the HoD and our professors and talked them into starting Nexus, an official club for the Computer Science department. We ran hackathons, seminars, sports and cultural events, and engagement grew 200% in a year.',
         // Photo slot: NIT Surat or the WictroniX team. Add public/photos/building.webp to show it.
         photo: 'building.webp',
-        photoAlt: 'Mihir with his team at NIT Surat', // [CONFIRM]
+        photoAlt: 'Mihir with his team at NIT Surat',
       },
       {
         id: 'wictronix',
+        title: 'Starting WictroniX',
         body: 'In 2022 I co-founded WictroniX to help small businesses, like the one my father ran, start using technology and digital tools. We were recognised by DPIIT as a startup, and we got to 50 clients in 8 industries and 3 countries, with ₹40 lakh in revenue.',
       },
     ],
+    chipsTitle: 'Also at NIT Surat',
     chips: [
       { id: 'ecell', body: 'E-Cell Convenor, NIT Surat: 9 events, 2,000+ students' },
       { id: 'ai-lms', body: 'AI-LMS piloted with 800+ students at MS University, ₹4 lakh government grant' },
@@ -209,7 +217,7 @@ export const chapters: Chapter[] = [
   {
     index: 5,
     title: 'The offer',
-    period: 'WictroniX years',
+    period: 'Running WictroniX',
     altitude: 400,
     sky: 'earlyAfternoon',
     kite: 2,
@@ -239,6 +247,7 @@ export const chapters: Chapter[] = [
     cards: [
       {
         id: 'stall',
+        title: 'Why WictroniX stalled',
         body: "By 2024, WictroniX had stopped growing, and a lot of that was on me. I'd misread demand in some segments. We couldn't hold on to clients for long. And I hadn't built a team structure that could grow with us. Hard work had got us this far. It wasn't going to get us further.",
       },
     ],
@@ -251,7 +260,7 @@ export const chapters: Chapter[] = [
         B: { label: 'Do something else', sub: 'Step away and learn somewhere new.' },
       },
       mihir: 'B',
-      // [CONFIRM]
+     
       reveal: "I stepped away and joined Chingari, a Series A startup, as an Associate Product Manager. Scaling was exactly where I'd got stuck, so I wanted to see how a funded company really builds and grows a product.",
     },
   },
@@ -265,10 +274,12 @@ export const chapters: Chapter[] = [
     cards: [
       {
         id: 'astrolive',
+        title: 'Building AstroLive',
         body: 'At Chingari I co-led AstroLive, an astrology livestreaming app, from zero. Leadership wanted to reuse the Chingari codebase so we could launch faster. I thought the two businesses were too different for that, so our Engineering Manager and I built a feature-level demo to show them why. In the end, we built AstroLive from scratch.',
       },
       {
         id: 'astrolive-growth',
+        title: 'What it grew into',
         body: 'AstroLive grew to 280K monthly active users, and revenue grew 62% month on month. We did it with a cross-functional team of 24. I also set up the UPI gateway, which now handles ₹2 crore+ every month.',
       },
     ],
@@ -276,7 +287,7 @@ export const chapters: Chapter[] = [
   {
     index: 8,
     title: 'The leap',
-    period: '22 (2024)',
+    period: '22, CAT 2024',
     altitude: 650,
     sky: 'goldenHour',
     kite: 3,
@@ -301,6 +312,7 @@ export const chapters: Chapter[] = [
     sky: 'sunset',
     kite: 3,
     chipsTitle: 'Outside the classroom',
+    chipsFirst: true,
     chips: [
       { id: 'amazon', body: 'Amazon: Program Manager Intern. Built an ML tool that explains about 85% of what moves GMS in vendor discussions.' },
       { id: 'picus', body: 'Picus Capital: Student Venture Partner, scouting early-stage startups.' },
@@ -310,17 +322,18 @@ export const chapters: Chapter[] = [
     cards: [
       {
         id: 'beyond-work',
-        body: "When I'm not working, I'm usually travelling, often to spiritual places like Palitana, Varanasi and Shravanabelagola. I read non-fiction, play chess and table tennis, and I write on Quora, where my answers have 100K+ views.",
+        title: 'Away from work',
+        body: "I like to travel, often to spiritual places like Palitana, Varanasi and Shravanabelagola. I read non-fiction, play chess and table tennis, and I write on Quora, where my answers have 100K+ views.",
         // Photo slot: IIM Ahmedabad. Add public/photos/iima.webp to show it.
         photo: 'iima.webp',
-        photoAlt: 'Mihir at IIM Ahmedabad', // [CONFIRM]
+        photoAlt: 'Mihir at IIM Ahmedabad',
       },
     ],
   },
   {
     index: 10,
-    title: 'Lanterns',
-    period: 'The future',
+    title: 'What comes next',
+    period: 'Night, the future',
     altitude: 850,
     sky: 'night',
     kite: 3,
@@ -332,9 +345,9 @@ export const ending = {
   intro: "It's dark now. All over the city, people are lighting lanterns on their terraces.",
   instruction: 'These three are mine. Tap one to let it go.',
   lanterns: [
-    { id: 'lantern-1', text: 'Start a company again.' }, // [CONFIRM]
-    { id: 'lantern-2', text: 'Help small businesses get through bad years.' }, // [CONFIRM]
-    { id: 'lantern-3', text: "Work on problems at India's scale." }, // [CONFIRM]
+    { id: 'lantern-1', text: 'Start a company again.' },
+    { id: 'lantern-2', text: 'Help small businesses get through bad years.' },
+    { id: 'lantern-3', text: "Work on problems at India's scale." },
   ],
   /** {n} is replaced with the number of matching choices. */
   comparisonHeading: 'You flew {n} of 5 the way I did.',
@@ -351,8 +364,8 @@ export const ending = {
     linkedin: 'LinkedIn',
   },
   contact: {
-    email: 'mihirgandhi1407@gmail.com', // [CONFIRM]
-    linkedin: 'https://www.linkedin.com/in/your-handle', // [CONFIRM] replace with the exact LinkedIn URL
+    email: 'mihirgandhi1407@gmail.com',
+    linkedin: 'https://www.linkedin.com/in/mihir--gandhi/',
   },
 };
 

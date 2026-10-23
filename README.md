@@ -2,6 +2,8 @@
 
 An interactive story told in one kite flight over Vadodara. A personal-story site for Mihir Gandhi, built from [SPEC.md](./SPEC.md).
 
+Live at **https://mihir-story.vercel.app/**
+
 ## Run it
 
 ```sh
@@ -50,37 +52,40 @@ Both are optional and can be added at any time. Nothing is requested for a file 
 
 To use a different photo or card, set `photo` and `photoAlt` on the card in `story.ts`. Photos show in a polaroid frame and load one chapter ahead of the kite.
 
-**Sound** is off until the visitor turns it on (speaker icon or the menu), and nothing loads before that. Files go in `public/audio/`, under 1.5 MB in total, royalty-free or self-recorded:
+**Sound** is off until the visitor turns it on ("Play with music" on the opening screen, the speaker icon, or the menu), and nothing loads before that.
+
+**Music** is made in the browser (`src/audio/music.ts`): a tanpura drone in D with santoor-like phrases over it. It follows the story: sparse on the terrace, a bright five-note scale on the climb, slow dark phrases in the two cuts, and a softer evening scale for the lanterns. To use a recording instead, add `music.mp3`; it loops in place of the generated music. Files go in `public/audio/`, under 1.5 MB in total, royalty-free or self-recorded:
 
 | File | Plays |
 | --- | --- |
+| `music.mp3` | Looping background music, replacing the generated music |
 | `wind.mp3` | Looping; louder with altitude and in the gusts at decisions |
 | `crowd.mp3` | Looping distant rooftop crowd, Chapter 0 only |
 | `creak.mp3` | Once, as the string tightens at each decision |
 | `kaipoche.mp3` | Once, the "Kai po che!" shout at Cut 1 |
 | `bells.mp3` | Once per lantern released |
 
-Until the files are added, the wind, creak and bells are synthesised in the browser and a short snap plays when the string is cut. The crowd and the shout play only from their files.
+Until the files are added, the music, wind, creak and bells are synthesised in the browser and a short snap plays when the string is cut. The crowd and the shout play only from their files.
 
 ## Deploy (Vercel)
 
 1. In Vercel, choose **Add New > Project** and import the `MicVick/mihir-story` repository.
 2. Vercel detects Vite from `vercel.json`: build command `npm run build`, output `dist`. Keep the defaults and deploy.
 3. Rename the project (for example `mihir-the-kite`) to get a clean `*.vercel.app` URL, or add a custom domain under **Settings > Domains**.
-4. Once the URL is final, set it in `index.html` as `og:url` and as an absolute `og:image` URL (some apps, including WhatsApp, need an absolute image URL), then check a link preview.
+4. `index.html` already points `og:url`, `og:image` and the canonical link at https://mihir-story.vercel.app/. If the domain changes, update those three.
 
 `vercel.json` caches hashed assets for a year and photos and sound for a week.
 
 ## Where things live
 
-- `src/content/story.ts`: **all on-screen copy** and chapter data. Edit text here only. Lines marked `[CONFIRM]` are drafts.
+- `src/content/story.ts`: **all on-screen copy** and chapter data. Edit text here only. The wording here replaces the draft copy in SPEC.md.
 - `src/content/palette.ts`: sky, kite and lantern colours, and each kite's pattern.
 - `src/content/beats.ts`: which card shows at which altitude. Each chapter's band is split evenly between its cards.
 - `src/state/store.ts`: the Zustand store shared by the UI and the 3D scene. Choices are saved to localStorage when it is available.
 - `src/state/compare.ts`: the "You flew n of 5" score and note.
 - `src/input/useFlightInput.ts`: wheel, touch and keys mapped to a target altitude (virtual scroll), plus Esc and P.
 - `src/scene/`: the Three.js scene. `Rooftops.tsx` is the city and the home terrace, `haze.ts` the aerial perspective that fades everything into the sky, `cutTimeline.ts` the timings for both cuts.
-- `src/audio/sound.ts`: the sound layers.
+- `src/audio/sound.ts`: the sound layers; `music.ts`: the generated music.
 - `src/ui/`: React components. `StoryMode.tsx` is the readable page, `SpoolMenu.tsx` the menu, `usePresenter.ts` presenter mode.
 - `src/styles/`: `global.css` (tokens, cards, buttons), `components.css` (shared by both modes), `flight.css`, `story.css`.
 
@@ -91,4 +96,4 @@ Until the files are added, the wind, creak and bells are synthesised in the brow
 - [x] Phase 3: decisions and ending
 - [x] Phase 4: cuts, kites and lanterns
 - [x] Phase 5: opening, sound, photos and presenter mode
-- [ ] Phase 6: QA and deploy (built and checked here; real-device testing and the Vercel deploy are listed in the hand-over notes)
+- [x] Phase 6: QA and deploy (live on Vercel; real-device testing on iPhone and Android still to do)

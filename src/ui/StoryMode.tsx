@@ -58,15 +58,13 @@ function ChapterSection({ chapter }: { chapter: Chapter }) {
           </p>
         )}
 
-        {chapter.chips && chapter.chipsTitle && (
-          <Chips chips={chapter.chips} tone={tone} title={chapter.chipsTitle} />
-        )}
+        {chapter.chips && chapter.chipsFirst && <Chips chips={chapter.chips} tone={tone} title={chapter.chipsTitle} />}
 
         {chapter.cards.map((card) => (
           <StoryCard key={card.id} card={card} tone={tone} />
         ))}
 
-        {chapter.chips && !chapter.chipsTitle && <Chips chips={chapter.chips} tone={tone} />}
+        {chapter.chips && !chapter.chipsFirst && <Chips chips={chapter.chips} tone={tone} title={chapter.chipsTitle} />}
 
         {chapter.decision && <StoryDecision chapter={chapter} />}
 

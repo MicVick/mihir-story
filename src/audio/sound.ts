@@ -1,13 +1,14 @@
 // Layered sound, off by default. Nothing loads until the visitor turns it on.
-// Each layer plays its file from public/audio when one exists (wind.mp3,
-// crowd.mp3, creak.mp3, kaipoche.mp3, bells.mp3). Wind, creak and bells
-// fall back to soft sounds made in the browser, so sound works before the
-// files are added. The crowd and the "Kai po che!" shout need their files.
+// Each layer plays its file from public/audio when one exists (music.mp3,
+// wind.mp3, crowd.mp3, creak.mp3, kaipoche.mp3, bells.mp3). Music, wind,
+// creak and bells fall back to sounds made in the browser, so sound works
+// before any file is added. The crowd and the "Kai po che!" shout need their files.
 
 import files from 'virtual:audio';
+import { createMusic, type Mood, type Music } from './music';
 import { useFlight } from '../state/store';
 
-type Layer = 'wind' | 'crowd' | 'creak' | 'kaipoche' | 'bells';
+type Layer = 'music' | 'wind' | 'crowd' | 'creak' | 'kaipoche' | 'bells';
 
 const fileFor = (layer: Layer) => files.find((f) => f.replace(/\.[^.]+$/, '') === layer);
 
@@ -16,6 +17,7 @@ interface Engine {
   master: GainNode;
   wind: { gain: GainNode; filter: BiquadFilterNode | null };
   crowd: GainNode | null;
+  music: Music | null;
   buffers: Partial<Record<Layer, AudioBuffer>>;
 }
 
@@ -65,12 +67,31 @@ function start(): Engine {
   const ctx = new Ctx();
   const master = ctx.createGain();
   master.gain.value = 0;
-  master.connect(ctx.destination);
+  // A gentle limiter so music, wind and effects together never clip.
+  const limiter = ctx.createDynamicsCompressor();
+  limiter.threshold.value = -10;
+  limiter.knee.value = 8;
+  limiter.ratio.value = 6;
+  limiter.attack.value = 0.005;
+  limiter.release.value = 0.25;
+  master.connect(limiter).connect(ctx.destination);
 
   const windGain = ctx.createGain();
   windGain.gain.value = 0;
   windGain.connect(master);
-  const e: Engine = { ctx, master, wind: { gain: windGain, filter: null }, crowd: null, buffers: {} };
+  const e: Engine = { ctx, master, wind: { gain: windGain, filter: null }, crowd: null, music: null, buffers: {} };
+
+  // Music: the file if there is one, otherwise the tanpura and santoor made in the browser.
+  const musicGain = ctx.createGain();
+  musicGain.gain.value = 0.9;
+  musicGain.connect(master);
+  if (fileFor('music')) {
+    void loadFile(ctx, 'music').then((buffer) => {
+      if (buffer) loop(ctx, buffer, musicGain);
+    });
+  } else {
+    e.music = createMusic(ctx, musicGain);
+  }
 
   // Synthesised wind until (or unless) the file arrives.
   const filter = ctx.createBiquadFilter();
@@ -126,13 +147,27 @@ export function updateSound(altitude: number, gust: number) {
   if (!engine || !useFlight.getState().sound) return;
   const { ctx, wind, crowd } = engine;
   const t = ctx.currentTime;
-  const level = 0.12 + 0.22 * smooth(0, 900, altitude) + 0.18 * gust;
+  const level = 0.06 + 0.16 * smooth(0, 900, altitude) + 0.16 * gust;
   wind.gain.gain.setTargetAtTime(level, t, 0.4);
   if (wind.filter) {
     const sway = Math.sin(t * 0.37) * 60 + Math.sin(t * 0.13) * 90;
     wind.filter.frequency.setTargetAtTime(380 + 420 * smooth(0, 900, altitude) + 250 * gust + sway, t, 0.5);
   }
   crowd?.gain.setTargetAtTime(0.5 * (1 - smooth(0, 120, altitude)), t, 0.6);
+
+  if (engine.music) {
+    engine.music.setMood(moodNow());
+    engine.music.scheduleUntil(t + 0.8);
+  }
+}
+
+/** The music's mood follows the story: the terrace, the climb, the cuts, the night. */
+function moodNow(): Mood {
+  const s = useFlight.getState();
+  if (s.phase === 'intro') return 'intro';
+  if (s.phase === 'cut') return 'cut';
+  if (s.phase === 'ending' || s.chapterIndex >= 10) return 'night';
+  return 'day';
 }
 
 function playBuffer(buffer: AudioBuffer, volume: number, when = 0) {
@@ -195,8 +230,8 @@ export function playSnap() {
   osc.stop(t + 0.16);
 }
 
-// One note of a pentatonic scale for each lantern.
-const BELL_NOTES = [659.25, 783.99, 987.77];
+// One note for each lantern, in the same key as the music (G, P and high Sa in D).
+const BELL_NOTES = [739.99, 880, 1174.66];
 
 /** A soft bell as a lantern is released. */
 export function playBell(index: number) {

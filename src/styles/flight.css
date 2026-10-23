@@ -540,6 +540,22 @@ html.is-flying body {
   color: var(--ink);
 }
 
+.intro__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 22px;
+}
+
+.intro__music {
+  gap: 8px;
+}
+
+.intro__music svg {
+  width: 18px;
+  height: 18px;
+}
+
 /* While the scene loads, in place of the launch button. */
 .intro__loading {
   display: flex;
