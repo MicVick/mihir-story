@@ -98,3 +98,10 @@ export const LinkIcon = () => (
     <path d="M13 4h7v7M20 4l-9 9" />
   </svg>
 );
+
+export const RestartIcon = () => (
+  <svg {...base}>
+    <path d="M4.5 12a7.5 7.5 0 1 0 2.3-5.4" />
+    <path d="M4.5 4.5v4h4" />
+  </svg>
+);

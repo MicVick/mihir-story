@@ -19,7 +19,15 @@ export function StoryCard({ card, tone, eyebrow, loadPhoto = true, children }: P
     <article className={`card card--${tone}`}>
       {eyebrow}
       {hasPhoto(card.photo) && loadPhoto && <Polaroid src={card.photo} alt={card.photoAlt ?? ''} ratio={card.photoRatio} />}
-      {card.title && <h3 className="card__title">{card.title}</h3>}
+      {card.title &&
+        (hasPhoto(card.logo) ? (
+          <div className="card__head">
+            <img className="card__logo" src={`/photos/${card.logo}`} alt={card.logoAlt ?? ''} width={52} height={52} />
+            <h3 className="card__title">{card.title}</h3>
+          </div>
+        ) : (
+          <h3 className="card__title">{card.title}</h3>
+        ))}
       {card.body && <p className="card__body">{card.body}</p>}
       {card.stat && <p className="stat">{card.stat}</p>}
       {children}

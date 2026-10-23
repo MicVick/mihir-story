@@ -207,6 +207,26 @@ button {
   margin-bottom: 12px;
 }
 
+/* A title with a round logo beside it. */
+.card__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.card__head .card__title {
+  margin-bottom: 0;
+}
+
+.card__logo {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  box-shadow: 0 6px 16px -6px rgba(31, 36, 48, 0.45);
+}
+
 .card__body {
   font-family: var(--font-text);
   font-size: var(--text-size);

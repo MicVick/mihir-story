@@ -19,6 +19,7 @@ export function SpoolMenu() {
   const presenter = useFlight((s) => s.presenter);
   const setPresenter = useFlight((s) => s.setPresenter);
   const setMode = useFlight((s) => s.setMode);
+  const resetFlight = useFlight((s) => s.resetFlight);
   const jumpTo = useFlight((s) => s.jumpTo);
   const panel = useRef<HTMLDivElement>(null);
   const tone = skies[chapters[current].sky].card;
@@ -110,6 +111,9 @@ export function SpoolMenu() {
         </div>
         <button type="button" className="text-link menu__story" onClick={() => setMode('story')}>
           {menu.readStory}
+        </button>
+        <button type="button" className="text-link menu__story" onClick={resetFlight}>
+          {menu.restartMenu}
         </button>
         <p className="menu__credits">{menu.credits}</p>
       </div>

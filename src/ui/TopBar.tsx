@@ -4,7 +4,7 @@ import { kites, skies } from '../content/palette';
 import { chapters, intro, menu } from '../content/story';
 import { setSoundOn } from '../audio/sound';
 import { useFlight } from '../state/store';
-import { SoundIcon, SpoolIcon } from './icons';
+import { RestartIcon, SoundIcon, SpoolIcon } from './icons';
 
 const RING = 2 * Math.PI * 18;
 
@@ -20,6 +20,7 @@ export function TopBar() {
   const presenter = useFlight((s) => s.presenter);
   const menuOpen = useFlight((s) => s.menuOpen);
   const setMenuOpen = useFlight((s) => s.setMenuOpen);
+  const resetFlight = useFlight((s) => s.resetFlight);
   // Rounded so the bar re-renders a few hundred times per flight, not every frame.
   const progress = useFlight(
     (s) => Math.round((Math.max(s.altitude, s.cut ? cutStop(s.cut.id).altitude : 0) / MAX_ALTITUDE) * 200) / 200,
@@ -39,6 +40,11 @@ export function TopBar() {
       </div>
       <div className="topbar__tools">
         {presenter && <span className="topbar__badge">{menu.presenter}</span>}
+        {phase !== 'intro' && (
+          <button type="button" className="icon-button" aria-label={menu.restart} title={menu.restart} onClick={resetFlight}>
+            <RestartIcon />
+          </button>
+        )}
         <button
           type="button"
           className="icon-button"

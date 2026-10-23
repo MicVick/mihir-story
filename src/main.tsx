@@ -6,6 +6,7 @@ import './styles/components.css';
 import './styles/story.css';
 import './styles/flight.css';
 import './styles/cinematic.css';
+import './styles/fit.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

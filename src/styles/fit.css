@@ -1,0 +1,198 @@
+/* Every flight screen fits in one screen height, at 100% zoom on an ordinary
+   laptop. Cards sit in the space below the top bar, and type, spacing and
+   photos step down as the window gets shorter. A card still scrolls inside
+   itself as a last resort, but nothing should need it. */
+
+@media (min-width: 769px) {
+  /* Cards are centred in the space below the top bar, never under it. */
+  .beats {
+    top: calc(max(18px, env(safe-area-inset-top)) + 62px);
+    bottom: 20px;
+  }
+
+  .beat,
+  .beat.beat--ending {
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  /* A photo never takes more than about a third of the screen height. */
+  .beats .polaroid img {
+    max-height: 30vh;
+  }
+}
+
+/* Laptops (up to about 880 px of window height). */
+@media (min-width: 769px) and (max-height: 880px) {
+  :root {
+    --card-pad: 24px;
+    --text-size: calc(18px * var(--scale));
+    --prompt-size: calc(19.5px * var(--scale));
+    --title-size: calc(21px * var(--scale));
+  }
+
+  .card__body {
+    line-height: 1.5;
+  }
+
+  .eyebrow {
+    margin-bottom: 10px;
+    padding-bottom: 9px;
+  }
+
+  .beats .polaroid {
+    margin-bottom: 14px;
+    padding: 8px 8px 22px;
+  }
+
+  .beats .polaroid img {
+    max-height: 25vh;
+  }
+
+  .photo-row {
+    margin-bottom: 10px;
+  }
+
+  .photo-row .polaroid--small img {
+    aspect-ratio: 3 / 2;
+  }
+
+  .chips {
+    gap: 10px;
+  }
+
+  .chip + .chip {
+    padding-top: 10px;
+  }
+
+  .stat {
+    margin-top: 12px;
+    padding-top: 10px;
+  }
+
+  .ledger {
+    margin-bottom: 12px;
+  }
+
+  .decision__prompt {
+    margin-bottom: 16px;
+  }
+
+  .comparison__table {
+    margin-top: 12px;
+  }
+
+  .comparison__table th,
+  .comparison__table td {
+    padding: 6px 10px 6px 0;
+  }
+
+  .closing {
+    margin: 14px auto 8px;
+    font-size: calc(20px * var(--scale));
+  }
+}
+
+/* Short laptop windows (up to about 740 px), such as a 1366 x 768 screen with the browser's bars. */
+@media (min-width: 769px) and (max-height: 740px) {
+  :root {
+    --card-pad: 20px;
+    --text-size: calc(17px * var(--scale));
+    --body-size: calc(15.5px * var(--scale));
+    --small-size: calc(14px * var(--scale));
+    --label-size: calc(13px * var(--scale));
+    --prompt-size: calc(18px * var(--scale));
+    --title-size: calc(19px * var(--scale));
+  }
+
+  .beats .polaroid img {
+    max-height: 20vh;
+  }
+
+  .beats .polaroid {
+    padding: 6px 6px 16px;
+  }
+
+  .choice {
+    min-height: 50px;
+  }
+
+  .comparison__heading {
+    font-size: calc(22px * var(--scale));
+  }
+
+  .comparison__table th,
+  .comparison__table td {
+    padding: 5px 8px 5px 0;
+  }
+
+  .closing {
+    margin: 10px auto 6px;
+    font-size: calc(18px * var(--scale));
+  }
+}
+
+/* Short phones: a smaller photo keeps the card's text in the bottom sheet. */
+@media (max-width: 768px) and (max-height: 720px) {
+  :root {
+    --text-size: calc(17px * var(--scale));
+    --card-pad: 18px;
+  }
+
+  .beats .polaroid:not(.polaroid--small) {
+    width: 48%;
+  }
+}
+
+/* The setback screen: the title and the text scale with the window's height too. */
+.setback__head {
+  margin-bottom: clamp(16px, 4vh, 34px);
+}
+
+.setback__title {
+  font-size: clamp(36px, min(6vw, 9vh), 84px);
+}
+
+.setback__text {
+  font-size: clamp(18px, min(2.1vw, 3.1vh), 28px);
+}
+
+.setback__action {
+  margin-top: clamp(18px, 4vh, 38px);
+}
+
+/* "Let's connect": everything, down to "Back to the start", in one screen. */
+.connect--screen {
+  padding-top: max(64px, calc(env(safe-area-inset-top) + 56px));
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+}
+
+.connect__photo {
+  width: clamp(64px, 12vh, 112px);
+  height: clamp(64px, 12vh, 112px);
+  margin-bottom: clamp(10px, 2.4vh, 22px);
+}
+
+.connect__heading {
+  margin-top: clamp(6px, 1.4vh, 12px);
+  font-size: clamp(30px, min(5vw, 7vh), 64px);
+}
+
+.connect__body {
+  margin-top: clamp(10px, 2.2vh, 20px);
+  font-size: clamp(16px, min(1.7vw, 2.6vh), 22px);
+}
+
+.connect__name {
+  margin-top: clamp(10px, 2.4vh, 22px);
+}
+
+.connect__links {
+  margin-top: clamp(14px, 3vh, 28px);
+}
+
+.connect__next {
+  margin-top: clamp(10px, 1.8vh, 16px);
+}

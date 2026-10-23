@@ -28,6 +28,7 @@ URL options:
 | Descend | Arrow Down, scroll up | Swipe down |
 | Choose | Click a choice, or Tab then Enter | Tap a choice |
 | Menu | Esc or the spool, top right | The spool |
+| Start over | The circular arrow, top right, or the menu | The same |
 | Presenter mode | P | From the menu |
 
 The kite waits on the home terrace until it is launched. The climb locks at each of the five decisions until a choice is made. A choice cannot be changed; descending re-shows its reveal.
@@ -48,13 +49,13 @@ Both are optional and can be added at any time. Nothing is requested for a file 
 
 | File | Where |
 | --- | --- |
-| `terrace.webp` | Chapter 0, the terrace (slot ready: childhood or family) |
-| `building.webp` | Chapter 4, Nexus at NIT Surat (slot ready) |
+| `terrace.webp` | Chapter 0, the terrace (school friends) |
+| `nexus-logo.webp`, `chingari-logo.webp` | Beside the titles of the Nexus and AstroLive cards (`logo` on a card) |
 | `wictronix-team.webp` | Chapter 4, Starting WictroniX |
 | `wictronix-meeting.webp` | Chapter 5, the reveal after the RTO decision |
 | `iima.webp` | Chapter 8, the reveal after the MBA decision |
 | `amazon.webp`, `entrevc-talk.webp`, `entrevc-crowd.webp` | Chapter 9, Outside the classroom |
-| `travel.webp` | Chapter 9, Away from work (slot ready) |
+| `travel.webp` | Chapter 9, Away from work |
 | `mihir.webp` | The "Let's connect" screen, cropped round |
 
 **Sound** is off until the visitor turns it on ("Play with music" on the opening screen, the speaker icon, or the menu), and nothing loads before that.
@@ -112,7 +113,7 @@ Optional extra files in `public/audio/`, royalty-free or self-recorded:
 - `src/scene/`: the Three.js scene. `Rooftops.tsx` is the city and the home terrace, `haze.ts` the aerial perspective that fades everything into the sky, `cutTimeline.ts` the timings for both cuts.
 - `src/audio/sound.ts`: the sound layers and the music cues. `tools/music/render.py`: renders the music.
 - `src/ui/`: React components. `Moments.tsx` is the chapter titles and milestones, `CutSequence.tsx` the setbacks, `JourneyRail.tsx` the rail. `StoryMode.tsx` is the readable page, `SpoolMenu.tsx` the menu, `usePresenter.ts` presenter mode.
-- `src/styles/`: `global.css` (tokens, cards, buttons), `components.css` (shared by both modes), `flight.css`, `story.css`.
+- `src/styles/`: `global.css` (tokens, cards, buttons), `components.css` (shared by both modes), `flight.css`, `story.css`, `cinematic.css` (moments, setbacks, the connect screen), and `fit.css`, which steps sizes down with the window height so every flight screen fits without scrolling.
 
 ## Build phases
 

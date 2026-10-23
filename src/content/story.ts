@@ -30,6 +30,9 @@ export interface StoryCard {
   photoAlt?: string;
   /** Width / height of the photo, e.g. '16 / 9'. Default '4 / 3'. */
   photoRatio?: string;
+  /** A round logo beside the title, from public/photos. */
+  logo?: string;
+  logoAlt?: string;
   milestone?: Milestone;
 }
 
@@ -106,6 +109,9 @@ export const menu = {
   presenter: 'Presenter mode',
   presenterHint: 'Press P to start or stop',
   readStory: 'Read the story instead',
+  /** Clears the flight and goes back to the opening screen, from the top bar or the menu. */
+  restart: 'Start over',
+  restartMenu: 'Start over from the terrace',
   progress: 'Flight progress',
   credits: 'Music: piano from the Salamander Grand Piano by Alexander Holm (CC BY 3.0); flute, strings and harp from tonejs-instruments.',
 };
@@ -143,9 +149,8 @@ export const chapters: Chapter[] = [
         title: 'Where I grew up',
         body: 'I grew up in Vadodara and went to Bright School. Every Uttarayan, the whole city goes up to its roofs, and my family spent the day on this terrace. My father ran a small business in town, and a lot of what I know about work I first saw at his shop.',
         stat: 'School went well. I finished Class X with 92.5%, in the top 0.36% in the state.',
-        // Photo slot: childhood or family. Add public/photos/terrace.webp to show it.
         photo: 'terrace.webp',
-        photoAlt: 'Mihir as a child with his family on the terrace in Vadodara',
+        photoAlt: 'Mihir and his school friends in Vadodara, smiling into a selfie',
       },
     ],
   },
@@ -227,9 +232,8 @@ export const chapters: Chapter[] = [
         id: 'nexus',
         title: 'Bringing campus back to life',
         body: 'When college reopened after COVID, it felt empty. Seniors and juniors hardly knew each other. A few classmates and I went to the HoD and our professors and talked them into starting Nexus, an official club for the Computer Science department. We ran hackathons, seminars, sports and cultural events, and engagement grew 200% in a year.',
-        // Photo slot: NIT Surat or the WictroniX team. Add public/photos/building.webp to show it.
-        photo: 'building.webp',
-        photoAlt: 'Mihir with his team at NIT Surat',
+        logo: 'nexus-logo.webp',
+        logoAlt: 'The Nexus club logo',
         milestone: { headline: 'Campus felt like a campus again', value: '200%', label: 'growth in engagement in one year' },
       },
       {
@@ -312,6 +316,8 @@ export const chapters: Chapter[] = [
       {
         id: 'astrolive',
         title: 'Building AstroLive',
+        logo: 'chingari-logo.webp',
+        logoAlt: 'The Chingari logo',
         body: 'At Chingari I co-led AstroLive, an astrology livestreaming app, from zero. Leadership wanted to reuse the Chingari codebase so we could launch faster. I thought the two businesses were too different for that, so our Engineering Manager and I built a feature-level demo to show them why. In the end, we built AstroLive from scratch.',
       },
       {
@@ -370,9 +376,8 @@ export const chapters: Chapter[] = [
         id: 'beyond-work',
         title: 'Away from work',
         body: "I like to travel, often to spiritual places like Palitana, Varanasi and Shravanabelagola. I read non-fiction, play chess and table tennis, and I write on Quora, where my answers have 100K+ views.",
-        // Photo slot: travel. Add public/photos/travel.webp to show it.
         photo: 'travel.webp',
-        photoAlt: 'Mihir travelling',
+        photoAlt: 'Green hills running down to the sea under a cloudy sky, seen on a trip',
       },
     ],
   },
