@@ -141,9 +141,24 @@
   color: var(--soft-on-sky, rgba(31, 36, 48, 0.7));
 }
 
+.milestone-mark__headline {
+  max-width: 18ch;
+  font-family: var(--font-head);
+  font-size: clamp(28px, 5vw, 40px);
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.1;
+  text-wrap: balance;
+  color: var(--ink);
+}
+
+.chapter--dark .milestone-mark__headline {
+  color: var(--paper);
+}
+
 .milestone-mark__value {
   font-family: var(--font-head);
-  font-size: clamp(64px, 12vw, 104px);
+  font-size: clamp(56px, 10vw, 88px);
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.035em;

@@ -4,6 +4,7 @@ import { beatIndexAt, beats, chapterAt, cutStop } from '../content/beats';
 import { skies } from '../content/palette';
 import { chapters, decisions, ui, type Chapter, type Milestone } from '../content/story';
 import { prefersReducedMotion } from '../lib/device';
+import { RELAUNCH } from '../scene/cutTimes';
 import { frame } from '../scene/frame';
 import { useFlight, type FlightState } from '../state/store';
 
@@ -12,15 +13,15 @@ type Moment = { key: string; chapter: Chapter; /** Shown even before the kite re
   | { kind: 'milestone'; milestone: Milestone }
 );
 
-const SHOW_MS = { chapter: 3200, milestone: 4000 };
+const SHOW_MS = { chapter: 3200, milestone: 4800 };
 const FADE_MS = 700;
 
 const free = (s: FlightState) => s.phase === 'flying' || s.phase === 'deciding' || s.phase === 'revealing' || s.phase === 'ending';
 
 /**
  * Large type over the sky at the turns of the story: the chapter title as
- * each chapter begins ("A new kite" after a cut), and the numbers worth
- * stopping for, counting up beside the kite. One at a time, in order;
+ * each chapter begins ("A new kite" after a cut), and the milestones: what
+ * each one meant, with the number behind it counting up beside the kite. One at a time, in order;
  * anything that has fallen behind the kite is dropped.
  */
 export function Moments() {
@@ -77,10 +78,16 @@ export function Moments() {
     };
 
     const unsubscribe = useFlight.subscribe((s, prev) => {
-      // A new kite climbing after a cut: title the chapter it is heading for.
+      // A new kite climbing after a cut: once it is off the roof, title the chapter it is heading for.
       if (s.phase === 'relaunch' && prev.phase !== 'relaunch' && s.cut) {
         const chapter = chapters[chapterAt(cutStop(s.cut.id).riseTo)];
-        push({ key: `chapter-${chapter.index}`, kind: 'chapter', chapter, kicker: ui.newKite, ahead: true }, true);
+        const delay = prefersReducedMotion() ? 0 : (RELAUNCH.liftOff + 1.2) * 1000;
+        timers.push(
+          window.setTimeout(
+            () => push({ key: `chapter-${chapter.index}`, kind: 'chapter', chapter, kicker: ui.newKite, ahead: true }, true),
+            delay,
+          ),
+        );
         return;
       }
       if (!free(s)) return;
@@ -133,6 +140,7 @@ export function Moments() {
             <span className="moment__spark" />
             {ui.milestone}
           </p>
+          <p className="moment__headline">{moment.milestone.headline}</p>
           <CountUp value={moment.milestone.value} />
           <p className="moment__label">{moment.milestone.label}</p>
         </>

@@ -9,7 +9,7 @@
 // The crowd and the "Kai po che!" shout play only from crowd.mp3 and kaipoche.mp3.
 
 import files from 'virtual:audio';
-import { SNAP, SLACK } from '../scene/cutTimes';
+import { snapTime } from '../scene/cutTimes';
 import { useFlight } from '../state/store';
 
 type Layer = 'music' | 'music-cut' | 'impact' | 'milestone' | 'wind' | 'crowd' | 'creak' | 'kaipoche' | 'bells';
@@ -157,16 +157,17 @@ export function updateSound(altitude: number, gust: number) {
   crowd?.gain.setTargetAtTime(0.5 * (1 - smooth(0, 120, altitude)), t, 0.6);
 
   // The music follows the story. The main theme plays softly on the terrace and fully in
-  // flight. In a cut it dips as the rival's string crosses, drops to silence at the snap
-  // (the impact plays there), and the setback theme comes in after a breath. On relaunch
-  // the setback theme fades and the main theme returns.
+  // flight. In a cut it dips as the rival's string crosses (or as the string strains in
+  // the stall), drops to silence at the snap (the impact plays there), and the setback
+  // theme comes in after a breath. On relaunch the setback theme fades and the main
+  // theme returns.
   const s = useFlight.getState();
   let main = s.phase === 'intro' ? 0.55 : 0.75;
   let cut = 0;
   let mainRate = 1.2;
   if (s.phase === 'cut' && s.cut) {
     const since = (performance.now() - s.cut.startedAt) / 1000;
-    const drop = s.cut.id === 'snap' ? SNAP.snap : SLACK.slack;
+    const drop = snapTime(s.cut.id);
     main = since < drop ? 0.3 : 0;
     mainRate = since < drop ? 0.4 : 0.06;
     cut = since > drop + 1.6 ? 0.8 : 0;
@@ -218,7 +219,7 @@ export function playShout() {
   playBuffer(engine.buffers.kaipoche, 0.9);
 }
 
-/** The weight of a setback: a low piano hit. Softer for the slow, slack cut. */
+/** The weight of a setback: a low piano hit. */
 export function playImpact(volume = 1) {
   if (!engine || !useFlight.getState().sound || !engine.buffers.impact) return;
   playBuffer(engine.buffers.impact, 0.9 * volume);

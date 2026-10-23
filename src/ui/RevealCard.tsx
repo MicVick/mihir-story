@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { CardTone } from '../content/palette';
 import { ui, type Choice, type Decision } from '../content/story';
 import { ArrowIcon } from './icons';
+import { hasPhoto, Polaroid } from './Polaroid';
 
 interface Props {
   decision: Decision;
@@ -10,9 +11,11 @@ interface Props {
   eyebrow?: ReactNode;
   /** Flight mode only: shows "Continue" and takes focus so keyboard users can move on. */
   onContinue?: () => void;
+  /** Flight loads photos one chapter ahead; until then the slot stays empty. */
+  loadPhoto?: boolean;
 }
 
-export function RevealCard({ decision, tone, chosen, eyebrow, onContinue }: Props) {
+export function RevealCard({ decision, tone, chosen, eyebrow, onContinue, loadPhoto = true }: Props) {
   return (
     <article className={`card card--${tone} reveal`}>
       {eyebrow}
@@ -26,6 +29,7 @@ export function RevealCard({ decision, tone, chosen, eyebrow, onContinue }: Prop
           <dd>{decision.options[decision.mihir].label}</dd>
         </div>
       </dl>
+      {hasPhoto(decision.photo) && loadPhoto && <Polaroid src={decision.photo} alt={decision.photoAlt ?? ''} ratio={decision.photoRatio} />}
       <p className="card__body">{decision.reveal}</p>
       {decision.result && <p className="stat">{decision.result}</p>}
       {onContinue && (

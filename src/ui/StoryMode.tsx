@@ -4,7 +4,7 @@ import { chapters, ending, intro, ui, type Chapter, type Milestone } from '../co
 import { useFlight } from '../state/store';
 import { Chips } from './Chips';
 import { DecisionPanel } from './DecisionPanel';
-import { EndingActions, EndingComparison } from './Ending';
+import { Connect, EndingComparison } from './Ending';
 import { RevealCard } from './RevealCard';
 import { KiteGlyph } from './icons';
 import { StoryCard } from './StoryCard';
@@ -57,8 +57,9 @@ function ChapterSection({ chapter }: { chapter: Chapter }) {
             {ui.rivalShout}
           </p>
         )}
+        {chapter.cut === 'slack' && <p className={`card card--${tone} shout`}>{ui.cutAgain}</p>}
 
-        {chapter.chips && chapter.chipsFirst && <Chips chips={chapter.chips} tone={tone} title={chapter.chipsTitle} />}
+        {chapter.chips && chapter.chipsFirst && <Chips chips={chapter.chips} tone={tone} title={chapter.chipsTitle} photos={chapter.chipsPhotos} />}
 
         {chapter.cards.map((card) =>
           chapter.cut ? (
@@ -75,7 +76,7 @@ function ChapterSection({ chapter }: { chapter: Chapter }) {
           ),
         )}
 
-        {chapter.chips && !chapter.chipsFirst && <Chips chips={chapter.chips} tone={tone} title={chapter.chipsTitle} />}
+        {chapter.chips && !chapter.chipsFirst && <Chips chips={chapter.chips} tone={tone} title={chapter.chipsTitle} photos={chapter.chipsPhotos} />}
 
         {chapter.decision && <StoryDecision chapter={chapter} />}
 
@@ -90,6 +91,7 @@ function MilestoneMark({ milestone }: { milestone: Milestone }) {
   return (
     <p className="milestone-mark">
       <span className="milestone-mark__kicker">{ui.milestone}</span>
+      <span className="milestone-mark__headline">{milestone.headline}</span>
       <span className="milestone-mark__value">{milestone.value}</span>
       <span className="milestone-mark__label">{milestone.label}</span>
     </p>
@@ -140,9 +142,10 @@ function StoryEnding({ tone }: { tone: 'light' | 'dark' }) {
       <p className={`card card--${tone} ending__intro ending__line`}>{ending.intro}</p>
 
       <ul className="lanterns">
-        {ending.lanterns.map((lantern) => (
+        {ending.lanterns.map((lantern, i) => (
           <li key={lantern.id} className="lantern">
             <span className="lantern__light" aria-hidden="true" />
+            <span className="lantern__goal">{ending.goal.replace('{n}', String(i + 1))}</span>
             <span className="lantern__text">{lantern.text}</span>
           </li>
         ))}
@@ -154,7 +157,9 @@ function StoryEnding({ tone }: { tone: 'light' | 'dark' }) {
 
       <p className="closing">{ending.closing}</p>
 
-      <EndingActions inStory />
+      <section className="connect connect--story" aria-labelledby="connect-heading-story">
+        <Connect inStory headingId="connect-heading-story" />
+      </section>
     </>
   );
 }

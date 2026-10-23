@@ -14,7 +14,7 @@ import {
 } from 'three';
 import { prefersReducedMotion } from '../lib/device';
 import { useFlight } from '../state/store';
-import { SNAP } from './cutTimeline';
+import { SLACK, SNAP, snapTime } from './cutTimeline';
 import { frame } from './frame';
 import { smoothstep } from './skyMath';
 
@@ -68,7 +68,8 @@ const points = (n: number) => Array.from({ length: n }, () => new Vector3());
  * The manja: a Catmull-Rom curve from the flyer's hand (bottom centre of
  * the screen, just out of view) to the kite's bridle, drawn as a thin
  * ribbon that faces the camera. It sags when slack and pulls tight on a
- * climb. At Cut 1 it snaps into two falling pieces.
+ * climb. In both cuts it snaps into two falling pieces: at Cut 1 where the
+ * rival's string crosses it, at Cut 2 after it strains and shakes in the wind.
  */
 export function KiteString() {
   const reduced = useMemo(prefersReducedMotion, []);
@@ -110,31 +111,33 @@ export function KiteString() {
     const tanHalf = Math.tan((camera.fov * Math.PI) / 360);
     const s = useFlight.getState();
     const c = frame.cutT;
-    const snapCut = s.phase === 'cut' && s.cut?.id === 'snap';
-    const slackCut = s.phase === 'cut' && s.cut?.id === 'slack';
-    const snapped = snapCut && c >= SNAP.snap;
+    const cut = s.phase === 'cut' ? s.cut : null;
+    const straining = cut?.id === 'slack' && c >= SLACK.strain && c < SLACK.snap ? smoothstep(SLACK.strain, SLACK.snap, c) : 0;
+    const snapped = !!cut && c >= snapTime(cut.id);
 
     const handDepth = 5;
     const hand = parts.main.points[0];
     hand.set(camera.position.x, camera.position.y - handDepth * tanHalf * 1.25, camera.position.z - handDepth);
 
     parts.material.color.copy(DAY).lerp(NIGHT, frame.sky.night);
-    // The slack string settles out of sight once the kite lies on the terrace.
-    parts.material.opacity = 0.9 * (slackCut ? 1 - frame.landed : 1);
+    parts.material.opacity = 0.9;
     parts.pieceMaterial.color.copy(parts.material.color);
 
     if (!snapped) {
       parts.wasSnapped = false;
       const [, mid1, mid2, kite] = parts.main.points;
       kite.copy(frame.bridle);
-      // Tight while climbing, slack when still or descending, very slack in Cut 2.
-      const target = slackCut ? 0 : Math.min(1, Math.max(0, 0.45 + frame.climbRate / 30));
-      parts.tension += (target - parts.tension) * (1 - Math.exp(-Math.min(delta, 0.1) * 3));
-      const sagScale = slackCut ? 0.09 + 0.16 * smoothstep(0, 0.8, c) : 0.09;
+      // Tight while climbing, slack when still or descending, bar-tight as it strains in Cut 2.
+      const target = straining > 0 ? 1 : Math.min(1, Math.max(0, 0.45 + frame.climbRate / 30));
+      parts.tension += (target - parts.tension) * (1 - Math.exp(-Math.min(delta, 0.1) * (straining > 0 ? 8 : 3)));
       const length = hand.distanceTo(kite);
-      const sag = length * sagScale * (1 - 0.75 * parts.tension);
+      const sag = length * 0.09 * (1 - 0.75 * parts.tension);
       mid1.lerpVectors(hand, kite, 0.35).y -= sag;
       mid2.lerpVectors(hand, kite, 0.7).y -= sag * 0.6;
+      // Straining, the string thrums: a fast shiver that grows until it parts.
+      const thrum = 0.06 * straining * Math.sin(frame.time * 70);
+      mid1.y += thrum;
+      mid2.y -= thrum * 0.8;
       // A gust bows the string sideways.
       const bend = length * 0.1 * frame.gust * (1 + 0.2 * Math.sin(frame.time * 1.3));
       mid1.x += bend;
@@ -154,7 +157,7 @@ export function KiteString() {
       show(false, false);
       return;
     }
-    const k = c - SNAP.snap;
+    const k = c - snapTime(cut!.id);
     // The piece still tied to the kite trails above it as it falls.
     const [b0, b1, b2] = parts.kiteEnd.points;
     b0.copy(frame.bridle);
@@ -167,7 +170,8 @@ export function KiteString() {
     h2.copy(frame.cutPoint).add(offset.set(0.4 * k, -1.5 * k * k, 0));
     h1.lerpVectors(h0, h2, 0.5).y -= 1.5;
     writeRibbon(parts.handEnd.geometry, parts.handEnd.curve, camera, state.size.height);
-    parts.pieceMaterial.opacity = 0.9 * (1 - smoothstep(SNAP.land - 1.2, SNAP.land, c));
+    const land = cut?.id === 'slack' ? SLACK.land : SNAP.land;
+    parts.pieceMaterial.opacity = 0.9 * (1 - smoothstep(land - 1.2, land, c));
     show(false, true);
   });
 

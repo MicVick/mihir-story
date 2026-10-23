@@ -77,3 +77,24 @@ export const KiteGlyph = ({ className }: { className?: string }) => (
     <path d="M20 42 16 52h8Z" fill="#F2C230" />
   </svg>
 );
+
+export const HomeIcon = () => (
+  <svg {...base} className="pill__icon">
+    <path d="M4 11l8-6.5 8 6.5" />
+    <path d="M6.5 9.5V19h11V9.5" />
+  </svg>
+);
+
+export const MailIcon = () => (
+  <svg {...base} className="pill__icon">
+    <rect x="3.5" y="6" width="17" height="12" rx="2" />
+    <path d="M4.5 7.5l7.5 5.5 7.5-5.5" />
+  </svg>
+);
+
+export const LinkIcon = () => (
+  <svg {...base} className="pill__icon">
+    <path d="M9 7H6.5A2.5 2.5 0 0 0 4 9.5v8A2.5 2.5 0 0 0 6.5 20h8a2.5 2.5 0 0 0 2.5-2.5V15" />
+    <path d="M13 4h7v7M20 4l-9 9" />
+  </svg>
+);

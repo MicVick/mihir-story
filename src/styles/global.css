@@ -151,8 +151,9 @@ button {
 /* Chapter line at the top of a card: kite mark, number and title, period on the right. */
 .eyebrow {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 10px;
+  gap: 2px 10px;
   margin-bottom: 14px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--rule, rgba(90, 70, 40, 0.16));
@@ -239,9 +240,30 @@ button {
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: var(--ratio, 4 / 3);
   object-fit: cover;
   background: #ece6dc;
+}
+
+/* A row of small photos on a highlights card, laid like prints on a table. */
+.photo-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 6px 0 14px;
+}
+
+.polaroid.polaroid--small {
+  margin: 0;
+  padding: 5px 5px 14px;
+}
+
+.photo-row .polaroid--small:nth-child(2) {
+  transform: rotate(1.5deg) translateY(4px);
+}
+
+.photo-row .polaroid--small:nth-child(3) {
+  transform: rotate(-1deg);
 }
 
 /* Pill buttons. */

@@ -6,7 +6,7 @@ import { chapters } from '../content/story';
 import { kites } from '../content/palette';
 import { prefersReducedMotion } from '../lib/device';
 import { useFlight } from '../state/store';
-import { SLACK, SNAP } from './cutTimeline';
+import { SLACK, snapTime, tugAt } from './cutTimeline';
 import { frame, WORLD_PER_METRE } from './frame';
 import {
   BOTTOM,
@@ -80,7 +80,7 @@ function KiteMesh({ parts, group, tail }: { parts: KiteParts; group?: RefObject<
 const nearestAngle = (angle: number, ref: number) =>
   ref + ((((angle - ref + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI;
 
-/** Mihir's kite: flies, leans into gusts, tumbles or drifts down in a cut, rests on the roof, relaunches. */
+/** Mihir's kite: flies, leans into gusts, tumbles down in a cut, rests on the roof, relaunches from the parapet. */
 export function Kite() {
   const group = useRef<Group>(null);
   const tail = useRef<Group>(null);
@@ -117,19 +117,21 @@ export function Kite() {
       amp * (0.12 * Math.sin(t * 0.9) + 0.05 * Math.sin(t * 2.3 + 1)) - 0.28 * gust - 0.3 * frame.drift,
     );
 
-    // Falling: the snapped kite tumbles; the slack kite swings down like a leaf.
+    // Falling: once the string parts, the kite tumbles. In the stall it first fights a hard
+    // wind, jerking against the string, until the string gives.
     const c = frame.cutT;
     if (c >= 0 && !reduced && s.cut) {
-      if (s.cut.id === 'snap' && c > SNAP.snap) {
-        const k = c - SNAP.snap;
+      const snap = snapTime(s.cut.id);
+      if (c > snap) {
+        const k = c - snap;
         rot.z += k * 7;
         rot.x += Math.sin(k * 5) * 0.8;
         pos.x += Math.sin(k * 1.7) * 0.8;
       } else if (s.cut.id === 'slack') {
-        const k = smoothstep(SLACK.fallStart, SLACK.fallStart + 1, c);
-        pos.x += 1.6 * Math.sin(c * 1.3) * k;
-        rot.z += 0.6 * Math.sin(c * 1.3) * k;
-        rot.x += 0.3 * Math.sin(c * 0.9) * k;
+        const k = smoothstep(SLACK.strain, snap, c);
+        pos.x += k * (0.5 + 0.25 * Math.sin(c * 23));
+        pos.y += k * 0.12 * Math.sin(c * 31);
+        rot.z += k * (-0.45 + 0.22 * Math.sin(c * 19));
       }
     }
 
@@ -137,14 +139,18 @@ export function Kite() {
     // waits, or lying where it fell. Blended in as the kite lands and out as it lifts.
     let weight = frame.perched;
     let restRot = PERCHED_ROTATION;
+    let tug = 0;
     rest.copy(PERCHED);
     if (s.phase === 'cut' && s.cut) {
       weight = frame.landed;
       restRot = FALLEN_ROTATION;
       rest.copy(FALLEN).setX(-SIDE_X);
     } else if (s.phase === 'relaunch') {
-      weight = frame.landed;
+      // The new kite stands on the parapet beside the old one, takes a few tugs, and lifts off.
       rest.setX(SIDE_X);
+      tug = tugAt(frame.relaunchT, reduced);
+      rest.y += 0.28 * tug;
+      rest.z += 0.12 * tug;
     }
     const spin = weight > 0 ? nearestAngle(rot.z, restRot.z) : rot.z;
     g.position.lerpVectors(pos, rest, weight);
@@ -153,6 +159,8 @@ export function Kite() {
       rot.y + (restRot.y - rot.y) * weight,
       spin + (restRot.z - spin) * weight,
     );
+    // Each tug tips the kite back into the wind.
+    g.rotation.x -= 0.35 * tug;
     if (tail.current) tail.current.rotation.z = amp * 0.35 * Math.sin(t * 3.1) * (1 - weight);
 
     setLight(parts);

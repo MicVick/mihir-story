@@ -14,7 +14,8 @@ const STREAKS = [
 
 /** While a decision is open, the wind visibly picks up: thin streaks cross the sky. */
 export function WindStreaks() {
-  const on = useFlight((s) => s.phase === 'deciding' || (s.phase === 'cut' && s.cut?.id === 'slack' && s.cut.step > 1));
+  // Also in the stall: while the string strains before it parts, and at Decision 4 on the rooftop.
+  const on = useFlight((s) => s.phase === 'deciding' || (s.phase === 'cut' && s.cut?.id === 'slack' && s.cut.step !== 1));
   return (
     <div className={`wind${on ? ' is-on' : ''}`} aria-hidden="true">
       {STREAKS.map(([top, length, seconds, delay], i) => (

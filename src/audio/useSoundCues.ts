@@ -17,7 +17,8 @@ export function useSoundCues() {
       }
       if (s.cut && s.cut.startedAt !== prev.cut?.startedAt && s.cut.id === 'slack') {
         const elapsed = performance.now() - s.cut.startedAt;
-        timers.push(window.setTimeout(() => playImpact(0.6), Math.max(0, SLACK.slack * 1000 - elapsed)));
+        timers.push(window.setTimeout(playSnap, Math.max(0, SLACK.snap * 1000 - elapsed)));
+        timers.push(window.setTimeout(() => playImpact(0.85), Math.max(0, SLACK.snap * 1000 - elapsed)));
       }
       if (s.lanterns.length > prev.lanterns.length) playBell(s.lanterns[s.lanterns.length - 1]);
     });

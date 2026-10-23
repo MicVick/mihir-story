@@ -7,7 +7,7 @@ import { LAUNCH_TO, useFlight } from '../state/store';
 import { Chips } from './Chips';
 import { CutSequence } from './CutSequence';
 import { DecisionPanel } from './DecisionPanel';
-import { Ending } from './Ending';
+import { ConnectScreen, Ending } from './Ending';
 import { Eyebrow } from './Eyebrow';
 import { ChevronUpIcon } from './icons';
 import { JourneyRail } from './JourneyRail';
@@ -43,6 +43,7 @@ export function FlightOverlay() {
       <Moments />
       <JourneyRail />
       {atEnding && <LanternField />}
+      <ConnectScreen />
       <CutSequence />
       <TopBar />
       <SpoolMenu />
@@ -63,8 +64,10 @@ function BeatView({ beat, active, loadPhoto }: { beat: Beat; active: boolean; lo
   return (
     <div className={`beat beat--${beat.kind}${active ? ' is-active' : ''}`} style={style} aria-hidden={!active}>
       {beat.kind === 'card' && <StoryCard card={beat.card} tone={tone} eyebrow={eyebrow} loadPhoto={loadPhoto} />}
-      {beat.kind === 'chips' && <Chips chips={beat.chips} tone={tone} title={beat.title} eyebrow={eyebrow} />}
-      {beat.kind === 'decision' && <FlightDecision beat={beat} tone={tone} eyebrow={eyebrow} />}
+      {beat.kind === 'chips' && (
+        <Chips chips={beat.chips} tone={tone} title={beat.title} eyebrow={eyebrow} photos={chapter.chipsPhotos} loadPhoto={loadPhoto} />
+      )}
+      {beat.kind === 'decision' && <FlightDecision beat={beat} tone={tone} eyebrow={eyebrow} loadPhoto={loadPhoto} />}
       {beat.kind === 'ending' && <Ending tone={tone} eyebrow={eyebrow} />}
     </div>
   );
@@ -75,10 +78,12 @@ function FlightDecision({
   beat,
   tone,
   eyebrow,
+  loadPhoto,
 }: {
   beat: Extract<Beat, { kind: 'decision' }>;
   tone: 'light' | 'dark';
   eyebrow: JSX.Element;
+  loadPhoto: boolean;
 }) {
   const { decision } = beat;
   const chosen = useFlight((s) => s.choices[decision.id]);
@@ -102,6 +107,7 @@ function FlightDecision({
       tone={tone}
       chosen={chosen}
       eyebrow={eyebrow}
+      loadPhoto={loadPhoto}
       onContinue={revealing ? continueFlight : undefined}
     />
   );

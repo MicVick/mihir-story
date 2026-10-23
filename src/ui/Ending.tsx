@@ -1,10 +1,12 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { CardTone } from '../content/palette';
 import { ending, ui } from '../content/story';
 import { hasWebGL, isLowEnd } from '../lib/device';
 import { compareChoices } from '../state/compare';
 import { useFlight } from '../state/store';
 import { Comparison } from './Comparison';
+import { ArrowIcon, HomeIcon, LinkIcon, MailIcon } from './icons';
+import { hasPhoto } from './Polaroid';
 
 /** The comparison panel, or a prompt to finish the choices first. */
 export function EndingComparison({ tone }: { tone: CardTone }) {
@@ -17,35 +19,81 @@ export function EndingComparison({ tone }: { tone: CardTone }) {
   );
 }
 
-/** Fly again, Read the story (flight only), Email me, LinkedIn. */
-export function EndingActions({ inStory }: { inStory: boolean }) {
+/**
+ * "Let's connect": a photo, a few lines on who all of this made me, and the
+ * ways to reach me. Then the next step: back to the start, or the other way
+ * to read the story.
+ */
+export function Connect({ inStory, headingId }: { inStory: boolean; headingId: string }) {
   const resetFlight = useFlight((s) => s.resetFlight);
   const setMode = useFlight((s) => s.setMode);
+  const { connect } = ending;
 
+  const home = () => {
+    resetFlight();
+    window.scrollTo({ top: 0 });
+  };
   const flyAgain = () => {
     resetFlight();
-    // From story mode, "Fly again" starts the flight where the device supports it.
-    if (inStory && hasWebGL() && !isLowEnd()) setMode('flight');
-    else window.scrollTo({ top: 0 });
+    setMode('flight');
   };
 
   return (
-    <div className="actions">
-      <button type="button" className="pill pill--primary" onClick={flyAgain}>
-        {ending.buttons.flyAgain}
-      </button>
-      {!inStory && (
-        <button type="button" className="pill pill--ghost" onClick={() => setMode('story')}>
-          {ending.buttons.readStory}
+    <div className="connect__inner">
+      {hasPhoto(connect.photo) && <img className="connect__photo" src={`/photos/${connect.photo}`} alt={connect.photoAlt} />}
+      <p className="connect__kicker">{connect.kicker}</p>
+      <h2 className="connect__heading" id={headingId}>
+        {connect.heading}
+      </h2>
+      <p className="connect__body">{connect.body}</p>
+      <p className="connect__name">
+        <strong>{connect.name}</strong>
+        <span>{connect.role}</span>
+      </p>
+      <div className="connect__links">
+        <a className="pill pill--primary" href={`mailto:${ending.contact.email}`}>
+          <MailIcon />
+          {ending.buttons.email}
+        </a>
+        <a className="pill pill--light" href={ending.contact.linkedin} target="_blank" rel="noopener noreferrer">
+          <LinkIcon />
+          {ending.buttons.linkedin}
+        </a>
+      </div>
+      <div className="connect__next">
+        <button type="button" className="pill pill--ghost" onClick={home}>
+          <HomeIcon />
+          {ending.buttons.home}
         </button>
-      )}
-      <a className="pill pill--ghost" href={`mailto:${ending.contact.email}`}>
-        {ending.buttons.email}
-      </a>
-      <a className="pill pill--ghost" href={ending.contact.linkedin} target="_blank" rel="noopener noreferrer">
-        {ending.buttons.linkedin}
-      </a>
+        {inStory
+          ? hasWebGL() &&
+            !isLowEnd() && (
+              <button type="button" className="pill pill--ghost" onClick={flyAgain}>
+                {ending.buttons.flyAgain}
+              </button>
+            )
+          : (
+              <button type="button" className="pill pill--ghost" onClick={() => setMode('story')}>
+                {ending.buttons.readStory}
+              </button>
+            )}
+      </div>
     </div>
+  );
+}
+
+/** Flight: "Let's connect" over the night sky, once the visitor moves on from the comparison. */
+export function ConnectScreen() {
+  const open = useFlight((s) => s.connect && s.phase === 'ending');
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (open) ref.current?.focus();
+  }, [open]);
+  if (!open) return null;
+  return (
+    <section ref={ref} className="connect connect--screen" aria-labelledby="connect-heading" tabIndex={-1}>
+      <Connect inStory={false} headingId="connect-heading" />
+    </section>
   );
 }
 
@@ -54,10 +102,12 @@ const PANEL_DELAY_MS = 1500;
 
 /**
  * Flight ending at night. First the visitor releases the three lanterns
- * (see LanternField); then the comparison, closing line and contact buttons.
+ * (see LanternField); then the comparison and the closing line, and "Next"
+ * opens the last screen.
  */
 export function Ending({ tone, eyebrow }: { tone: CardTone; eyebrow?: ReactNode }) {
   const allReleased = useFlight((s) => s.lanterns.length >= ending.lanterns.length);
+  const setConnect = useFlight((s) => s.setConnect);
   const [panel, setPanel] = useState(allReleased);
 
   useEffect(() => {
@@ -82,7 +132,12 @@ export function Ending({ tone, eyebrow }: { tone: CardTone; eyebrow?: ReactNode 
     <div className="ending">
       <EndingComparison tone={tone} />
       <p className="closing">{ending.closing}</p>
-      <EndingActions inStory={false} />
+      <div className="actions">
+        <button type="button" className="pill pill--primary" onClick={() => setConnect(true)}>
+          {ending.buttons.next}
+          <ArrowIcon />
+        </button>
+      </div>
     </div>
   );
 }

@@ -351,6 +351,15 @@
     0 0 64px 20px rgba(255, 181, 71, 0.22);
 }
 
+.lantern__goal {
+  margin-bottom: -8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #ffd79a;
+}
+
 .lantern__text {
   font-family: var(--font-head);
   font-size: calc(18px * var(--scale));

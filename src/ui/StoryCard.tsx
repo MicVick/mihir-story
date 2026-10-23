@@ -1,7 +1,7 @@
-import { useState, type ReactNode } from 'react';
-import photos from 'virtual:photos';
+import type { ReactNode } from 'react';
 import type { CardTone } from '../content/palette';
 import type { StoryCard as StoryCardData } from '../content/story';
+import { hasPhoto, Polaroid } from './Polaroid';
 
 interface Props {
   card: StoryCardData;
@@ -18,22 +18,11 @@ export function StoryCard({ card, tone, eyebrow, loadPhoto = true, children }: P
   return (
     <article className={`card card--${tone}`}>
       {eyebrow}
-      {card.photo && photos.includes(card.photo) && loadPhoto && <Polaroid src={card.photo} alt={card.photoAlt ?? ''} />}
+      {hasPhoto(card.photo) && loadPhoto && <Polaroid src={card.photo} alt={card.photoAlt ?? ''} ratio={card.photoRatio} />}
       {card.title && <h3 className="card__title">{card.title}</h3>}
       {card.body && <p className="card__body">{card.body}</p>}
       {card.stat && <p className="stat">{card.stat}</p>}
       {children}
     </article>
-  );
-}
-
-/** White polaroid frame. Only rendered when the photo exists; hides itself if it still fails to load. */
-function Polaroid({ src, alt }: { src: string; alt: string }) {
-  const [missing, setMissing] = useState(false);
-  if (missing) return null;
-  return (
-    <figure className="polaroid">
-      <img src={`/photos/${src}`} alt={alt} loading="lazy" decoding="async" onError={() => setMissing(true)} />
-    </figure>
   );
 }

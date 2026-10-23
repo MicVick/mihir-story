@@ -48,6 +48,8 @@ export interface FlightState {
   cutsDone: CutId[];
   /** Indexes of the hero lanterns released in the ending. */
   lanterns: number[];
+  /** The last screen, "Let's connect", is open. */
+  connect: boolean;
   /** performance.now() when "Hold to launch" completed, or null while the kite waits on the terrace. */
   launchedAt: number | null;
   /** The spool menu is open; flight input pauses. */
@@ -74,6 +76,7 @@ interface FlightActions {
   /** Called by the scene when the new kite has climbed back. */
   finishRelaunch: () => void;
   releaseLantern: (index: number) => void;
+  setConnect: (open: boolean) => void;
   setMode: (mode: FlightState['mode']) => void;
   setSound: (on: boolean) => void;
   setPresenter: (on: boolean) => void;
@@ -157,6 +160,7 @@ const fresh = {
   cut: null,
   cutsDone: [] as CutId[],
   lanterns: [],
+  connect: false,
   launchedAt: null,
   menuOpen: false,
 };
@@ -268,6 +272,7 @@ export const useFlight = create<FlightState & FlightActions>()((set, get) => ({
         : { lanterns: [...s.lanterns, index] },
     ),
 
+  setConnect: (connect) => set({ connect }),
   setMode: (mode) => set({ mode }),
   setSound: (sound) => set({ sound }),
   setPresenter: (presenter) => set({ presenter }),

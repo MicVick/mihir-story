@@ -32,7 +32,9 @@ URL options:
 
 The kite waits on the home terrace until it is launched. The climb locks at each of the five decisions until a choice is made. A choice cannot be changed; descending re-shows its reveal.
 
-At 250 m a rival kite cuts the string (Cut 1); at 450 m the string goes slack (Cut 2). Both kites fall back to the home terrace, and the new kite climbs back on its own to the next chapter. "Re-tie the string" is held for one second, or pressed once from the keyboard.
+At 250 m a rival kite cuts the string (Cut 1); at 450 m the string strains in a hard wind and snaps on its own (Cut 2, "Cut again."). Both kites fall back to the home terrace. The new kite then launches again from the parapet: the camera comes back down to the roof, a few tugs on the string, "From the ground up, again.", and it climbs back on its own to the next chapter. "Re-tie the string" is held for one second, or pressed once from the keyboard.
+
+At the end, the three lanterns are labelled Goal 1, 2 and 3, and the next one waiting says "Tap to release". After the comparison, "Next" opens the last screen, "Let's connect": a photo, a few lines, Email and LinkedIn, and "Back to the start", which clears the flight and returns to the opening screen.
 
 **Presenter mode** climbs on its own at a steady pace, waits on each card long enough to read it aloud plus 2 seconds, and makes all text 15% larger. Decisions, the cut cards and the lanterns still wait for a click, so the room can vote.
 
@@ -42,15 +44,18 @@ At 250 m a rival kite cuts the string (Cut 1); at 450 m the string goes slack (C
 
 Both are optional and can be added at any time. Nothing is requested for a file that does not exist: the build lists both folders, so a missing photo or sound is simply skipped.
 
-**Photos** go in `public/photos/`, as WebP, up to 1600 px wide and 200 KB each. Three cards have a slot ready in `src/content/story.ts`:
+**Photos** go in `public/photos/`, as WebP, up to 1600 px wide and 200 KB each. In `src/content/story.ts`, a card or a decision's reveal takes `photo`, `photoAlt` and optionally `photoRatio` (default `'4 / 3'`); a highlights card takes a row of small photos in `chipsPhotos`. Photos show in a polaroid frame and load one chapter ahead of the kite.
 
-| File | Card |
+| File | Where |
 | --- | --- |
-| `terrace.webp` | Chapter 0, the terrace (childhood or family) |
-| `building.webp` | Chapter 4, Nexus at NIT Surat (or the WictroniX team) |
-| `iima.webp` | Chapter 9, IIM Ahmedabad |
-
-To use a different photo or card, set `photo` and `photoAlt` on the card in `story.ts`. Photos show in a polaroid frame and load one chapter ahead of the kite.
+| `terrace.webp` | Chapter 0, the terrace (slot ready: childhood or family) |
+| `building.webp` | Chapter 4, Nexus at NIT Surat (slot ready) |
+| `wictronix-team.webp` | Chapter 4, Starting WictroniX |
+| `wictronix-meeting.webp` | Chapter 5, the reveal after the RTO decision |
+| `iima.webp` | Chapter 8, the reveal after the MBA decision |
+| `amazon.webp`, `entrevc-talk.webp`, `entrevc-crowd.webp` | Chapter 9, Outside the classroom |
+| `travel.webp` | Chapter 9, Away from work (slot ready) |
+| `mihir.webp` | The "Let's connect" screen, cropped round |
 
 **Sound** is off until the visitor turns it on ("Play with music" on the opening screen, the speaker icon, or the menu), and nothing loads before that.
 
@@ -60,11 +65,11 @@ To use a different photo or card, set `photo` and `photoAlt` on the card in `sto
 | --- | --- |
 | `music.mp3` | The main theme (2:07, loops). Soft on the terrace, full in flight |
 | `music-cut.mp3` | The setback theme (B minor, slow piano and cello), in place of the main theme during a cut |
-| `impact.mp3` | A low piano hit as the string snaps (softer for the slack cut) |
+| `impact.mp3` | A low piano hit as the string snaps |
 | `milestone.mp3` | A harp swell when a milestone number appears |
 | `bells.mp3` | Three harp notes as each lantern rises |
 
-In a cut, the main theme dips as the rival's string crosses, drops to silence at the snap, and the setback theme comes in after a breath; on relaunch the main theme returns. Everything loads only after sound is turned on (about 2.7 MB).
+In a cut, the main theme dips as the string comes under strain, drops to silence at the snap, and the setback theme comes in after a breath; on relaunch the main theme returns. Everything loads only after sound is turned on (about 2.7 MB).
 
 To change the music, edit `tools/music/render.py` and run `python3 -I tools/music/render.py <samples dir> public/audio`. The samples come from npm: `@audio-samples/piano-mp3-velocity4`, `-velocity7`, `-velocity10`, and `tonejs-instrument-flute-mp3`, `-violin-mp3`, `-cello-mp3`, `-harp-mp3` (unpack each into the samples dir, as the script's paths show).
 
@@ -81,9 +86,9 @@ Optional extra files in `public/audio/`, royalty-free or self-recorded:
 
 ## The turns of the story
 
-- **Chapter titles** rise over the sky as each chapter begins; after a cut the new kite's chapter is titled "A new kite".
-- **Milestones** (`milestone` on a card or decision in `story.ts`) count up beside the kite with gold sparks and a harp swell: 99.64, 200%, ₹40 lakh, 280K, 99.51. In story mode they stand large between the cards.
-- **Setbacks**: at the snap the screen flashes, the camera punches in, the fall runs in slow motion for a moment and the edges close in. The setback is then told full-screen on a dark veil, a sentence at a time. In story mode the cut chapters are dark bands.
+- **Chapter titles** rise over the sky as each chapter begins, with Mihir's age and the year; after a cut the new kite's chapter is titled "A new kite" once it is off the roof.
+- **Milestones** (`milestone` on a card or decision in `story.ts`) say what each turn meant in words, with the number behind it counting up beside the kite, gold sparks and a harp swell. In story mode they stand large between the cards.
+- **Setbacks**: in both cuts, at the snap the screen flashes, the camera punches in, the fall runs in slow motion for a moment and the edges close in. The setback is then told full-screen on a dark veil, a sentence at a time. In story mode the cut chapters are dark bands.
 - **Decisions**: the wind picks up and streaks cross the sky while a decision is open.
 - **The journey rail** (desktop) runs down the left edge: every chapter at its altitude, the kite moving along it, with a diamond for each decision and a break for each cut once reached.
 

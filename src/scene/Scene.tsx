@@ -7,7 +7,7 @@ import { LAUNCH_MS, useFlight } from '../state/store';
 import { CameraRig } from './CameraRig';
 import { Birds } from './Birds';
 import { Clouds } from './Clouds';
-import { cutAltitude, cutClock, fallEnd, landedAt, punchAt, riseAltitude, riseDuration, SNAP, SLACK, veilAt } from './cutTimeline';
+import { cutAltitude, cutClock, fallEnd, landedAt, punchAt, RELAUNCH, riseAltitude, riseDuration, SLACK, SNAP, snapTime, veilAt } from './cutTimeline';
 import { frame } from './frame';
 import { Kite, RestingKite } from './Kite';
 import { Lanterns } from './Lanterns';
@@ -57,31 +57,40 @@ function AltitudeDriver() {
     frame.punch = 0;
     let desatTarget = 0;
     let rainTarget = 0;
+    let gustTarget = s.phase === 'deciding' ? 1 : 0;
 
     if (s.cut && (s.phase === 'cut' || s.phase === 'relaunch')) {
       const stop = cutStop(s.cut.id);
       const snap = s.cut.id === 'snap';
       const t = cutClock(s.cut.id, (now - s.cut.startedAt) / 1000, reduced);
+      const snapAt = snapTime(s.cut.id);
 
       if (s.phase === 'cut') {
         frame.cutT = t;
         next = cutAltitude(s.cut.id, t, reduced);
         frame.landed = landedAt(s.cut.id, t, reduced);
-        if (reduced) frame.veil = veilAt(snap ? SNAP.snap : SLACK.fallStart, t);
-        if (snap && !reduced && t > SNAP.cross && t < SNAP.snap) frame.shake = 1;
+        if (reduced) frame.veil = veilAt(snapAt, t);
+        if (!reduced && t < snapAt) {
+          // Cut 1: the rival's string saws at Mihir's. Cut 2: the string strains harder and harder.
+          if (snap && t > SNAP.cross) frame.shake = 1;
+          if (!snap && t > SLACK.strain) frame.shake = 0.25 + 0.75 * smoothstep(SLACK.strain, snapAt, t);
+        }
         // The snap itself: a hard jolt, and the camera punches in.
-        if (snap && !reduced && t >= SNAP.snap && t < SNAP.snap + 0.3) frame.shake = 2.2 * (1 - (t - SNAP.snap) / 0.3);
+        if (!reduced && t >= snapAt && t < snapAt + 0.3) frame.shake = 2.2 * (1 - (t - snapAt) / 0.3);
         frame.punch = punchAt(s.cut.id, t, reduced);
         if (s.cut.step === 0 && t >= fallEnd(s.cut.id, reduced)) s.advanceCut();
-        desatTarget = snap ? (t > SNAP.snap ? 1 : 0) : 0.5;
+        desatTarget = t > snapAt ? 1 : snap ? 0 : 0.35;
         rainTarget = snap && !reduced ? 1 : 0;
+        // The stall is a storm of its own: the wind howls until the string gives.
+        if (!snap && !reduced && t < snapAt + 0.4) gustTarget = smoothstep(0, SLACK.strain + 0.4, t);
         // The sky holds on the cut's chapter while the kite falls.
         frame.skyAltitude = stop.altitude;
       } else {
         const r = (now - (s.cut.relaunchAt ?? now)) / 1000;
         frame.relaunchT = r;
         next = riseAltitude(s.cut.id, r, reduced);
-        frame.landed = reduced ? (r < 0.5 ? 1 : 0) : 1 - smoothstep(0, 0.6, r);
+        // The camera comes down off the fallen kite to the parapet, where the new kite waits.
+        frame.landed = reduced ? (r < 0.5 ? 1 : 0) : 1 - smoothstep(0, RELAUNCH.settle, r);
         if (reduced) frame.veil = veilAt(0, r);
         // Colour returns over 2 s; the sky moves on to the next chapter as the kite climbs.
         frame.skyAltitude =
@@ -100,11 +109,13 @@ function AltitudeDriver() {
       frame.landed = 0;
       frame.skyAltitude = next;
     }
-    frame.perched = s.phase === 'intro' ? 1 : s.cut ? 0 : 1 - smoothstep(0.4, 9, next);
+    // On the terrace before launch, and again for the relaunch after a cut: the kite
+    // stands on the parapet and the camera looks up from the roof until it is well up.
+    frame.perched = s.phase === 'intro' ? 1 : s.phase === 'cut' ? 0 : 1 - smoothstep(0.4, 9, next);
 
     frame.desat = ease(frame.desat, desatTarget, s.phase === 'relaunch' ? 1.6 : 2.5, dt);
     frame.rain = ease(frame.rain, rainTarget, 1.5, dt);
-    frame.gust = ease(frame.gust, s.phase === 'deciding' ? 1 : 0, 1.6, dt);
+    frame.gust = ease(frame.gust, gustTarget, 1.6, dt);
     frame.drift = s.lastChoice
       ? (s.lastChoice.side === 'A' ? -1 : 1) * driftEnvelope((now - s.lastChoice.at) / 1000)
       : 0;

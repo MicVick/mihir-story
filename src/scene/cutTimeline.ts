@@ -2,12 +2,12 @@
 // elapsed time, so the scene, the camera and the HTML layer stay in step.
 
 import { cutStop, type CutId } from '../content/beats';
-import { SLACK, SNAP } from './cutTimes';
+import { RELAUNCH, SLACK, SNAP, snapTime } from './cutTimes';
 import { smoothstep } from './skyMath';
 
-export { SLACK, SNAP };
+export { RELAUNCH, SLACK, SNAP, snapTime };
 
-/** Cut 1 slows down as the string parts (1.2 s at 30% speed), then the fall runs at full speed. */
+/** Both cuts slow down as the string parts (1.2 s at 30% speed), then the fall runs at full speed. */
 const SLOW = { real: 1.2, rate: 0.3 };
 
 /**
@@ -16,15 +16,17 @@ const SLOW = { real: 1.2, rate: 0.3 };
  * string, the camera and the cards alike.
  */
 export function cutClock(id: CutId, t: number, reduced: boolean): number {
-  if (id !== 'snap' || reduced || t <= SNAP.snap) return t;
-  if (t < SNAP.snap + SLOW.real) return SNAP.snap + (t - SNAP.snap) * SLOW.rate;
-  return SNAP.snap + SLOW.real * SLOW.rate + (t - SNAP.snap - SLOW.real);
+  const snap = snapTime(id);
+  if (reduced || t <= snap) return t;
+  if (t < snap + SLOW.real) return snap + (t - snap) * SLOW.rate;
+  return snap + SLOW.real * SLOW.rate + (t - snap - SLOW.real);
 }
 
 /** 0 to 1. The camera pushes in hard at the snap and eases back out as the kite falls. */
 export function punchAt(id: CutId, t: number, reduced: boolean): number {
-  if (id !== 'snap' || reduced) return 0;
-  return smoothstep(SNAP.snap, SNAP.snap + 0.12, t) * (1 - smoothstep(SNAP.snap + 0.36, SNAP.snap + 1.6, t));
+  if (reduced) return 0;
+  const snap = snapTime(id);
+  return smoothstep(snap, snap + 0.12, t) * (1 - smoothstep(snap + 0.36, snap + 1.6, t));
 }
 
 /** Under reduced motion the fall and the rise are a fade through the sky colour. */
@@ -36,19 +38,19 @@ const easeInOutSine = (t: number) => -(Math.cos(Math.PI * t) - 1) / 2;
 
 /** When the falling part ends and the cut's cards begin. */
 export function fallEnd(id: CutId, reduced: boolean): number {
-  if (id === 'snap') return reduced ? SNAP.snap + 2 * FADE : SNAP.land;
-  return reduced ? SLACK.fallStart + 2 * FADE : SLACK.land;
+  if (reduced) return snapTime(id) + 2 * FADE;
+  return id === 'snap' ? SNAP.land : SLACK.land;
 }
 
 /** Altitude during the cut, from the trigger altitude down to the rooftops. */
 export function cutAltitude(id: CutId, t: number, reduced: boolean): number {
   const { altitude: from, fallTo: to } = cutStop(id);
-  const start = id === 'snap' ? SNAP.snap : SLACK.fallStart;
+  const start = snapTime(id);
   if (reduced) return t < start + FADE ? from : to;
   const end = fallEnd(id, false);
   const p = Math.min(1, Math.max(0, (t - start) / (end - start)));
-  // The snapped kite drops faster and faster; the slack kite sinks gently.
-  return from - (from - to) * (id === 'snap' ? fallCurve(p) : easeInOutSine(p));
+  // Once the string is cut the kite drops faster and faster.
+  return from - (from - to) * fallCurve(p);
 }
 
 /** 0 to 1 as the kite settles onto the roof at the end of the fall. */
@@ -60,15 +62,21 @@ export function landedAt(id: CutId, t: number, reduced: boolean): number {
 export function riseDuration(id: CutId, reduced: boolean): number {
   if (reduced) return 2 * FADE;
   const { fallTo, riseTo } = cutStop(id);
-  return 2.5 + (riseTo - fallTo) / 150;
+  return RELAUNCH.liftOff + RELAUNCH.climb + (riseTo - fallTo) / 150;
 }
 
-/** Altitude while the new kite climbs back to the next chapter. */
+/** Altitude while the new kite waits on the parapet, lifts off, and climbs back to the next chapter. */
 export function riseAltitude(id: CutId, t: number, reduced: boolean): number {
   const { fallTo, riseTo } = cutStop(id);
   if (reduced) return t < FADE ? fallTo : riseTo;
-  const p = Math.min(1, t / riseDuration(id, false));
+  const p = Math.min(1, Math.max(0, (t - RELAUNCH.liftOff) / (riseDuration(id, false) - RELAUNCH.liftOff)));
   return fallTo + (riseTo - fallTo) * easeInOutSine(p);
+}
+
+/** 0 to 1: the short tugs on the string that coax the new kite off the parapet. */
+export function tugAt(t: number, reduced: boolean): number {
+  if (reduced) return 0;
+  return RELAUNCH.tugs.reduce((sum, at) => sum + Math.exp(-(((t - at) / 0.09) ** 2)), 0);
 }
 
 /** Opacity of the fade veil under reduced motion: in, cut to the new place, out. */

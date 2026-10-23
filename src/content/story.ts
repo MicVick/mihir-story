@@ -8,8 +8,13 @@ import type { SkyKey } from './palette';
 export type Choice = 'A' | 'B';
 export type KiteId = 1 | 2 | 3;
 
-/** A number worth stopping for. `value` is shown exactly as written; its digits count up in flight. */
+/**
+ * A turn worth stopping for. `headline` says what it meant in words; `value`
+ * is the number behind it, shown exactly as written (its digits count up in
+ * flight), and `label` says what the number counts.
+ */
 export interface Milestone {
+  headline: string;
   value: string;
   label: string;
 }
@@ -23,6 +28,8 @@ export interface StoryCard {
   photo?: string;
   /** Describes the photo for screen readers. */
   photoAlt?: string;
+  /** Width / height of the photo, e.g. '16 / 9'. Default '4 / 3'. */
+  photoRatio?: string;
   milestone?: Milestone;
 }
 
@@ -36,12 +43,16 @@ export interface Decision {
   reveal: string;
   result?: string;
   milestone?: Milestone;
+  /** A photo on the reveal, as on a story card. */
+  photo?: string;
+  photoAlt?: string;
+  photoRatio?: string;
 }
 
 export interface Chapter {
   index: number;
   title: string;
-  /** Mihir's age or period, shown as a small eyebrow. */
+  /** Mihir's age and the year, shown as a small eyebrow. */
   period: string;
   /** Trigger altitude in metres. */
   altitude: number;
@@ -55,6 +66,8 @@ export interface Chapter {
   chipsTitle?: string;
   /** The chips open the chapter. Otherwise they follow the cards. */
   chipsFirst?: boolean;
+  /** Small photos in a row on the chips card, from public/photos. */
+  chipsPhotos?: { src: string; alt: string }[];
   decision?: Decision;
   cut?: 'snap' | 'slack';
 }
@@ -106,6 +119,8 @@ export const ui = {
   newKite: 'A new kite',
   milestone: 'Milestone',
   setback: 'Setback',
+  cutAgain: 'Cut again.',
+  upAgain: 'From the ground up, again.',
   retie: 'Re-tie the string',
   continue: 'Continue',
   comparisonLocked: 'Make all five calls to see how your flight compares with mine.',
@@ -118,7 +133,7 @@ export const chapters: Chapter[] = [
   {
     index: 0,
     title: 'The terrace',
-    period: 'Childhood, Vadodara',
+    period: 'Age up to 16 · Vadodara',
     altitude: 0,
     sky: 'dawn',
     kite: 1,
@@ -126,8 +141,8 @@ export const chapters: Chapter[] = [
       {
         id: 'terrace',
         title: 'Where I grew up',
-        body: 'I grew up in Vadodara and went to Bright School. Every Uttarayan, the whole city goes up to its roofs, and my family spent the day on this terrace. My father ran a small business in town.',
-        stat: 'Class X: 92.5%, top 0.36% in the state.',
+        body: 'I grew up in Vadodara and went to Bright School. Every Uttarayan, the whole city goes up to its roofs, and my family spent the day on this terrace. My father ran a small business in town, and a lot of what I know about work I first saw at his shop.',
+        stat: 'School went well. I finished Class X with 92.5%, in the top 0.36% in the state.',
         // Photo slot: childhood or family. Add public/photos/terrace.webp to show it.
         photo: 'terrace.webp',
         photoAlt: 'Mihir as a child with his family on the terrace in Vadodara',
@@ -137,7 +152,7 @@ export const chapters: Chapter[] = [
   {
     index: 1,
     title: 'Leaving home',
-    period: '16 (2018)',
+    period: 'Age 16 · Year 2018',
     altitude: 100,
     sky: 'earlyMorning',
     kite: 1,
@@ -153,14 +168,14 @@ export const chapters: Chapter[] = [
       mihir: 'B',
      
       reveal: "I went to Kota. Staying would have been easier, and I think that's exactly why I didn't. I wanted to see what I could manage on my own.",
-      result: 'Class XII: 95.8%, rank 5 of 171. KVPY Fellowship, All India Rank 191. JEE Mains: 99.64 percentile.',
-      milestone: { value: '99.64', label: 'percentile in JEE Mains' },
+      result: 'Living alone taught me to plan my own days and to keep going on the bad ones. The results followed: 95.8% in Class XII (rank 5 of 171), a KVPY Fellowship (All India Rank 191) and 99.64 percentile in JEE Mains.',
+      milestone: { headline: 'The two years in Kota paid off', value: '99.64', label: 'percentile in JEE Mains' },
     },
   },
   {
     index: 2,
     title: 'The branch',
-    period: '18 (2020)',
+    period: 'Age 18 · Year 2020',
     altitude: 200,
     sky: 'morning',
     kite: 1,
@@ -181,7 +196,7 @@ export const chapters: Chapter[] = [
   {
     index: 3,
     title: 'Losing my father',
-    period: '19 (2021)',
+    period: 'Age 19 · Year 2021',
     altitude: 250,
     // The cut kite falls all the way back to the home terrace.
     fallTo: 0,
@@ -203,7 +218,7 @@ export const chapters: Chapter[] = [
   {
     index: 4,
     title: 'Building',
-    period: 'NIT Surat, 2020 to 2024',
+    period: 'Age 18 to 22 · Year 2020 to 2024',
     altitude: 300,
     sky: 'noon',
     kite: 2,
@@ -215,25 +230,28 @@ export const chapters: Chapter[] = [
         // Photo slot: NIT Surat or the WictroniX team. Add public/photos/building.webp to show it.
         photo: 'building.webp',
         photoAlt: 'Mihir with his team at NIT Surat',
-        milestone: { value: '200%', label: 'growth in engagement in one year' },
+        milestone: { headline: 'Campus felt like a campus again', value: '200%', label: 'growth in engagement in one year' },
       },
       {
         id: 'wictronix',
         title: 'Starting WictroniX',
-        body: 'In 2022 I co-founded WictroniX to help small businesses, like the one my father ran, start using technology and digital tools. We were recognised by DPIIT as a startup, and we got to 50 clients in 8 industries and 3 countries, with ₹40 lakh in revenue.',
-        milestone: { value: '₹40 lakh', label: 'in revenue, from 50 clients in 3 countries' },
+        body: 'In 2022 I co-founded WictroniX to help small businesses, like the one my father ran, start using technology and digital tools. It was slow, hands-on work: sitting with owners, understanding how they ran things, and building what actually helped. DPIIT recognised us as a startup, and we worked with 50 clients in 8 industries and 3 countries, earning ₹40 lakh in revenue.',
+        photo: 'wictronix-team.webp',
+        photoAlt: 'The WictroniX team around a conference table',
+        photoRatio: '16 / 9',
+        milestone: { headline: 'Small businesses trusted us with their work', value: '50', label: 'clients in 8 industries and 3 countries' },
       },
     ],
     chipsTitle: 'Also at NIT Surat',
     chips: [
-      { id: 'ecell', body: 'E-Cell Convenor, NIT Surat: 9 events, 2,000+ students' },
-      { id: 'ai-lms', body: 'AI-LMS piloted with 800+ students at MS University, ₹4 lakh government grant' },
+      { id: 'ecell', body: 'E-Cell, NIT Surat: as Convenor, I helped run 9 events for 2,000+ students curious about building something of their own.' },
+      { id: 'ai-lms', body: 'AI-LMS: a learning platform we piloted with 800+ students at MS University, backed by a ₹4 lakh government grant.' },
     ],
   },
   {
     index: 5,
     title: 'The offer',
-    period: 'Running WictroniX',
+    period: 'Age 20 to 22 · Year 2022 to 2024',
     altitude: 400,
     sky: 'earlyAfternoon',
     kite: 2,
@@ -248,12 +266,15 @@ export const chapters: Chapter[] = [
       },
       mihir: 'B',
       reveal: "I wanted us to walk away. We argued about it for a long time before the team agreed. Nobody outside would ever have known if we'd taken it. We would have known, though.",
+      photo: 'wictronix-meeting.webp',
+      photoAlt: 'A WictroniX quarterly meeting, with the plan for the year on the screen',
+      photoRatio: '16 / 9',
     },
   },
   {
     index: 6,
     title: 'The stall',
-    period: '2024, graduation',
+    period: 'Age 22 · Year 2024',
     altitude: 450,
     // Both cuts land on the home terrace, so Decision 4 can show two kites side by side there.
     fallTo: 0,
@@ -283,7 +304,7 @@ export const chapters: Chapter[] = [
   {
     index: 7,
     title: 'Chingari',
-    period: '2024 to 2025',
+    period: 'Age 22 to 23 · Year 2024 to 2025',
     altitude: 550,
     sky: 'lateAfternoon',
     kite: 3,
@@ -296,15 +317,15 @@ export const chapters: Chapter[] = [
       {
         id: 'astrolive-growth',
         title: 'What it grew into',
-        body: 'AstroLive grew to 280K monthly active users, and revenue grew 62% month on month. We did it with a cross-functional team of 24. I also set up the UPI gateway, which now handles ₹2 crore+ every month.',
-        milestone: { value: '280K', label: 'monthly active users on AstroLive' },
+        body: "None of it was a one-person job. A cross-functional team of 24 built it together, and it grew to 280K monthly active users, with revenue growing 62% month on month. The piece I'm proudest of is the UPI gateway I set up, which now handles ₹2 crore+ every month.",
+        milestone: { headline: 'Something we started from zero, used by real people', value: '280K', label: 'people using AstroLive every month' },
       },
     ],
   },
   {
     index: 8,
     title: 'The leap',
-    period: '22, CAT 2024',
+    period: 'Age 22 · Year 2024',
     altitude: 650,
     sky: 'goldenHour',
     kite: 3,
@@ -319,39 +340,46 @@ export const chapters: Chapter[] = [
       },
       mihir: 'B',
       reveal: "WictroniX had shown me how much I didn't know about strategy, finance and scale, and I wanted to fix that before I built anything again. I took CAT 2024, got 99.51 percentile, and joined IIM Ahmedabad as a Praxis Scholar.",
-      milestone: { value: '99.51', label: 'percentile in CAT 2024' },
+      milestone: { headline: 'Off to IIM Ahmedabad', value: '99.51', label: 'percentile in CAT 2024' },
+      photo: 'iima.webp',
+      photoAlt: 'Mihir in a suit outside the Indian Institute of Management Ahmedabad sign',
     },
   },
   {
     index: 9,
     title: 'IIM Ahmedabad',
-    period: '2025 to today',
+    period: 'Age 23 · Year 2025 to today',
     altitude: 750,
     sky: 'sunset',
     kite: 3,
     chipsTitle: 'Outside the classroom',
     chipsFirst: true,
+    chipsPhotos: [
+      { src: 'amazon.webp', alt: 'Mihir behind the I love Amazon sign at the Amazon office' },
+      { src: 'entrevc-talk.webp', alt: 'Mihir hosting a How To Start A Startup session for EntreVC' },
+      { src: 'entrevc-crowd.webp', alt: 'The audience at the EntreVC How To Start A Startup event at IIM Ahmedabad' },
+    ],
     chips: [
-      { id: 'amazon', body: 'Amazon: Program Manager Intern. Built an ML tool that explains about 85% of what moves GMS in vendor discussions.' },
-      { id: 'picus', body: 'Picus Capital: Student Venture Partner, scouting early-stage startups.' },
-      { id: 'entrevc', body: "EntreVC: Club Coordinator. Hosted a fireside chat with Sarvam AI's founding engineer." },
-      { id: 'cultcomm', body: 'CultComm: 1 of 22 selected from 160+ applicants.' },
+      { id: 'amazon', body: 'Amazon: Program Manager Intern. I built an ML tool that explains about 85% of what moves GMS, so vendor discussions start from data.' },
+      { id: 'picus', body: 'Picus Capital: Student Venture Partner. I meet early-stage founders and learn how investors judge a startup.' },
+      { id: 'entrevc', body: "EntreVC: Club Coordinator. We bring founders and investors to campus, including a fireside chat with Sarvam AI's founding engineer." },
+      { id: 'cultcomm', body: 'CultComm: one of 22 picked from 160+ applicants to help run cultural life on campus.' },
     ],
     cards: [
       {
         id: 'beyond-work',
         title: 'Away from work',
         body: "I like to travel, often to spiritual places like Palitana, Varanasi and Shravanabelagola. I read non-fiction, play chess and table tennis, and I write on Quora, where my answers have 100K+ views.",
-        // Photo slot: IIM Ahmedabad. Add public/photos/iima.webp to show it.
-        photo: 'iima.webp',
-        photoAlt: 'Mihir at IIM Ahmedabad',
+        // Photo slot: travel. Add public/photos/travel.webp to show it.
+        photo: 'travel.webp',
+        photoAlt: 'Mihir travelling',
       },
     ],
   },
   {
     index: 10,
     title: 'What comes next',
-    period: 'Night, the future',
+    period: 'The years ahead',
     altitude: 850,
     sky: 'night',
     kite: 3,
@@ -361,11 +389,14 @@ export const chapters: Chapter[] = [
 
 export const ending = {
   intro: "It's dark now. All over the city, people are lighting lanterns on their terraces.",
-  instruction: 'These three are mine. Tap one to let it go.',
+  instruction: 'These three lanterns are my goals. Tap each one to let it go.',
+  /** On each lantern before it is released; {n} is the goal's number. */
+  goal: 'Goal {n}',
+  tap: 'Tap to release',
   lanterns: [
-    { id: 'lantern-1', text: 'Start a company again.' },
-    { id: 'lantern-2', text: 'Help small businesses get through bad years.' },
-    { id: 'lantern-3', text: "Work on problems at India's scale." },
+    { id: 'lantern-1', text: 'Build a startup that solves big problems for India.' },
+    { id: 'lantern-2', text: 'Travel across the country.' },
+    { id: 'lantern-3', text: 'Live a healthy, energetic life.' },
   ],
   /** {n} is replaced with the number of matching choices. */
   comparisonHeading: 'You flew {n} of 5 the way I did.',
@@ -380,6 +411,18 @@ export const ending = {
     readStory: 'Read the story',
     email: 'Email me',
     linkedin: 'LinkedIn',
+    next: 'Next',
+    home: 'Back to the start',
+  },
+  /** The last screen. */
+  connect: {
+    kicker: "Let's connect",
+    heading: 'Thanks for flying with me.',
+    body: "All these years of ups and downs, of work and of hard decisions, have made me someone who works where technology and business meet. If you're building something, hiring, or just want to talk about kites and startups, I'd love to hear from you.",
+    photo: 'mihir.webp',
+    photoAlt: 'Mihir Gandhi',
+    name: 'Mihir Gandhi',
+    role: 'MBA, IIM Ahmedabad · Co-founder, WictroniX',
   },
   contact: {
     email: 'mihirgandhi1407@gmail.com',
